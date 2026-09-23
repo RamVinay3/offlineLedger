@@ -1,0 +1,55 @@
+<div class="tabs-layout">
+  <!-- Main Content Outlet for Tabs -->
+  <div class="tabs-content">
+    <router-outlet></router-outlet>
+  </div>
+
+  <!-- Modern Bottom Navigation Bar -->
+  <nav
+    class="bottom-tab-bar glass-panel"
+    [class.light-tab-bar]="state.settings().theme === 'light'"
+  >
+    <!-- Home -->
+    <a routerLink="/tabs/dashboard" routerLinkActive="active" class="tab-item">
+      <ion-icon name="home-outline" class="tab-icon inactive-icon"></ion-icon>
+      <ion-icon name="home" class="tab-icon active-icon"></ion-icon>
+      <span class="tab-label">Home</span>
+    </a>
+
+    <!-- People -->
+    <a routerLink="/tabs/people" routerLinkActive="active" class="tab-item">
+      <ion-icon name="people-outline" class="tab-icon inactive-icon"></ion-icon>
+      <ion-icon name="people" class="tab-icon active-icon"></ion-icon>
+      <span class="tab-label">People</span>
+    </a>
+
+    <!-- Center Floating Action Button (+) -->
+    <div class="fab-wrapper">
+      <button class="fab-btn" (click)="showFastEntry.set(true)" title="Quick Add">
+        <ion-icon name="add-outline"></ion-icon>
+      </button>
+    </div>
+
+    <!-- Activity -->
+    <a routerLink="/tabs/activity" routerLinkActive="active" class="tab-item">
+      <ion-icon name="time-outline" class="tab-icon inactive-icon"></ion-icon>
+      <ion-icon name="time" class="tab-icon active-icon"></ion-icon>
+      <span class="tab-label">Activity</span>
+    </a>
+
+    <!-- Settings -->
+    <a routerLink="/tabs/settings" routerLinkActive="active" class="tab-item">
+      <ion-icon name="settings-outline" class="tab-icon inactive-icon"></ion-icon>
+      <ion-icon name="settings" class="tab-icon active-icon"></ion-icon>
+      <span class="tab-label">Settings</span>
+    </a>
+  </nav>
+
+  <!-- Global Fast Entry Modal -->
+  @if (showFastEntry()) {
+    <app-fast-entry-modal
+      (saved)="onFastEntrySaved()"
+      (closed)="showFastEntry.set(false)"
+    ></app-fast-entry-modal>
+  }
+</div>

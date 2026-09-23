@@ -1,0 +1,327 @@
+<div class="page-container">
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-title-wrap">
+      <ion-icon name="settings-outline" class="header-icon"></ion-icon>
+      <h1>Settings & Privacy</h1>
+    </div>
+  </header>
+
+  <main class="content-body">
+    <!-- Privacy Guarantee Banner -->
+    <div class="privacy-banner card-container">
+      <div class="banner-icon-wrap">
+        <ion-icon name="shield-checkmark-outline"></ion-icon>
+      </div>
+      <div>
+        <h3>Your Data Stays on Your Device</h3>
+        <p>
+          LOOP operates 100% offline. Zero servers, zero analytics, zero AI tracking. You have complete ownership of your personal relationships ledger.
+        </p>
+      </div>
+    </div>
+
+    <!-- Notification Banner -->
+    @if (statusMessage()) {
+      <div class="status-banner" [class.error]="isErrorStatus()">
+        <ion-icon [name]="isErrorStatus() ? 'alert-circle' : 'checkmark-circle'"></ion-icon>
+        <span>{{ statusMessage() }}</span>
+      </div>
+    }
+
+    <!-- 1. Security & App Lock -->
+    <section class="settings-group card-container">
+      <div class="group-header">
+        <ion-icon name="lock-closed-outline" class="group-icon"></ion-icon>
+        <h2>Security & App Lock</h2>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-text">
+          <span class="setting-title">App Lock (PIN)</span>
+          <span class="setting-desc">
+            @if (!state.settings().pinHash) {
+              Not configured yet — Set a 4-digit PIN below
+            } @else if (state.settings().isAppLockEnabled) {
+              Active — Requires PIN to open and view financial records
+            } @else {
+              PIN saved (Currently turned off)
+            }
+          </span>
+        </div>
+        <label class="toggle-switch">
+          <input
+            type="checkbox"
+            [checked]="state.settings().isAppLockEnabled"
+            (change)="toggleAppLock($event)"
+          />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <!-- If NO PIN configured yet: Show Setup PIN box directly -->
+      @if (!state.settings().pinHash) {
+        <div class="nested-box setup-pin-box animate-fade-in">
+          <div class="setup-header">
+            <ion-icon name="key-outline" class="setup-icon"></ion-icon>
+            <div>
+              <div class="setup-title">Set 4-Digit PIN</div>
+              <div class="setup-desc">Enter 4 numbers to protect and lock your ledger</div>
+            </div>
+          </div>
+          <div class="pin-input-wrap">
+            <input
+              id="initialPinInput"
+              type="password"
+              maxlength="4"
+              inputmode="numeric"
+              pattern="[0-9]{4}"
+              class="form-input font-mono pin-input"
+              placeholder="••••"
+              [(ngModel)]="newPin"
+              (input)="onPinInput($event)"
+              (keydown)="onPinKeyDown($event)"
+            />
+            <button
+              class="btn-primary pin-save-btn"
+              (click)="savePin()"
+              [disabled]="newPin.length !== 4"
+            >
+              Set PIN & Enable
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- If PIN IS configured: Show options -->
+      @if (state.settings().pinHash) {
+        <div class="nested-box animate-fade-in">
+          @if (state.settings().isAppLockEnabled) {
+            <!-- Biometric Unlock Toggle -->
+            <div class="setting-item">
+              <div class="setting-text">
+                <span class="setting-title">Biometric Unlock</span>
+                <span class="setting-desc">FaceID / TouchID / Passkey</span>
+              </div>
+              <label class="toggle-switch">
+                <input
+                  type="checkbox"
+                  [checked]="state.settings().isBiometricEnabled"
+                  (change)="toggleBiometrics($event)"
+                />
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- Auto-Lock Timeout -->
+            <div class="setting-item">
+              <div class="setting-text">
+                <span class="setting-title">Auto-Lock Inactivity</span>
+                <span class="setting-desc">Lock app after being idle</span>
+              </div>
+              <select
+                class="form-input form-select"
+                [ngModel]="state.settings().autoLockTimeout"
+                (ngModelChange)="updateAutoLockTimeout($event)"
+              >
+                <option value="immediately">Immediately</option>
+                <option value="1m">After 1 minute</option>
+                <option value="5m">After 5 minutes</option>
+                <option value="15m">After 15 minutes</option>
+                <option value="never">Never</option>
+              </select>
+            </div>
+
+            <!-- Test Lock Now -->
+            <button class="btn-secondary lock-now-btn" (click)="lockAppNow()">
+              <ion-icon name="lock-closed-outline"></ion-icon>
+              Lock App Now
+            </button>
+          }
+
+          <!-- Change PIN / Remove PIN Row -->
+          <div class="pin-management-row">
+            @if (!isEditingPin()) {
+              <div class="pin-actions">
+                <button class="action-link-btn" (click)="isEditingPin.set(true)">
+                  <ion-icon name="create-outline"></ion-icon>
+                  <span>Change PIN</span>
+                </button>
+                <button class="action-link-btn danger-link-btn" (click)="removePin()">
+                  <ion-icon name="trash-outline"></ion-icon>
+                  <span>Remove PIN</span>
+                </button>
+              </div>
+            } @else {
+              <div class="change-pin-box">
+                <span class="setting-title">Enter New 4-Digit PIN:</span>
+                <div class="pin-input-wrap">
+                  <input
+                    type="password"
+                    maxlength="4"
+                    inputmode="numeric"
+                    pattern="[0-9]{4}"
+                    class="form-input font-mono pin-input"
+                    placeholder="••••"
+                    [(ngModel)]="newPin"
+                    (input)="onPinInput($event)"
+                    (keydown)="onPinKeyDown($event)"
+                  />
+                  <button
+                    class="btn-primary pin-save-btn"
+                    (click)="savePin()"
+                    [disabled]="newPin.length !== 4"
+                  >
+                    Update
+                  </button>
+                  <button
+                    class="btn-secondary pin-save-btn"
+                    (click)="isEditingPin.set(false); newPin = ''"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </section>
+
+    <!-- 2. Preferences -->
+    <section class="settings-group card-container">
+      <div class="group-header">
+        <ion-icon name="color-palette-outline" class="group-icon"></ion-icon>
+        <h2>Preferences</h2>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-text">
+          <span class="setting-title">Currency Symbol</span>
+          <span class="setting-desc">Symbol used for all money obligations</span>
+        </div>
+        <select
+          class="form-input form-select font-mono"
+          [ngModel]="state.settings().currencySymbol"
+          (ngModelChange)="updateCurrency($event)"
+        >
+          <option value="₹">₹ (INR - Indian Rupee)</option>
+          <option value="$">$ (USD / International)</option>
+          <option value="€">€ (EUR - Euro)</option>
+          <option value="£">£ (GBP - British Pound)</option>
+          <option value="¥">¥ (JPY / CNY)</option>
+          <option value="AED">AED (UAE Dirham)</option>
+          <option value="C$">C$ (CAD - Canadian Dollar)</option>
+          <option value="A$">A$ (AUD - Australian Dollar)</option>
+        </select>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-text">
+          <span class="setting-title">Visual Theme</span>
+          <span class="setting-desc">Obsidian dark mode or clear light mode</span>
+        </div>
+        <div class="theme-buttons">
+          <button
+            class="theme-btn"
+            [class.selected]="state.settings().theme === 'dark'"
+            (click)="setTheme('dark')"
+          >
+            Dark
+          </button>
+          <button
+            class="theme-btn"
+            [class.selected]="state.settings().theme === 'light'"
+            (click)="setTheme('light')"
+          >
+            Light
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Local Backup & Restore -->
+    <section class="settings-group card-container">
+      <div class="group-header">
+        <ion-icon name="cloud-download-outline" class="group-icon"></ion-icon>
+        <h2>Encrypted Backup & Restore</h2>
+      </div>
+
+      <p class="section-desc">
+        Export a full AES-256-GCM encrypted <code>.loop</code> backup file to keep in your personal files or transfer to another device.
+      </p>
+
+      <!-- Export Encrypted Backup -->
+      <div class="action-card">
+        <span class="action-title">Create Encrypted Backup</span>
+        <div class="password-row">
+          <input
+            type="password"
+            class="form-input"
+            placeholder="Choose a backup password"
+            [(ngModel)]="backupPassword"
+          />
+          <button
+            class="btn-primary"
+            [disabled]="!backupPassword || isExportingBackup()"
+            (click)="exportEncryptedBackup()"
+          >
+            {{ isExportingBackup() ? 'Encrypting...' : 'Export .loop' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Restore Encrypted Backup -->
+      <div class="action-card">
+        <span class="action-title">Restore from .loop Backup</span>
+        <div class="password-row">
+          <input
+            type="password"
+            class="form-input"
+            placeholder="Password used for backup"
+            [(ngModel)]="restorePassword"
+          />
+          <label class="btn-secondary file-upload-btn">
+            <span>Select .loop File</span>
+            <input
+              type="file"
+              accept=".loop,.json"
+              (change)="onBackupFileSelected($event)"
+              style="display: none"
+            />
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Data Export (CSV & JSON) -->
+    <section class="settings-group card-container">
+      <div class="group-header">
+        <ion-icon name="document-text-outline" class="group-icon"></ion-icon>
+        <h2>Data Portability & Export</h2>
+      </div>
+
+      <p class="section-desc">
+        Export your complete ledger for spreadsheets or archival purposes.
+      </p>
+
+      <div class="export-buttons-grid">
+        <button class="btn-secondary export-btn" (click)="exportCsv()">
+          <ion-icon name="document-text-outline"></ion-icon>
+          <span>Export CSV (Excel / Sheets)</span>
+        </button>
+        <button class="btn-secondary export-btn" (click)="exportJson()">
+          <ion-icon name="cloud-download-outline"></ion-icon>
+          <span>Export Raw JSON</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- About LOOP -->
+    <div class="app-version-box">
+      <div class="app-version-title">LOOP v1.0.0 (Production)</div>
+      <div class="app-version-sub">Offline Personal IOU & Lending Ledger</div>
+      <div class="app-quote">“Never lose track of what you gave, borrowed, or owe.”</div>
+    </div>
+  </main>
+</div>

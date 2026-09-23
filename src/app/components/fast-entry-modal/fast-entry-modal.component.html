@@ -1,0 +1,227 @@
+<div class="modal-backdrop animate-fade-in" (click)="onClose()">
+  <div class="modal-dialog card-container" (click)="$event.stopPropagation()">
+    <!-- Header -->
+    <div class="modal-header">
+      <div class="title-wrap">
+        <ion-icon name="flash-outline" class="header-icon"></ion-icon>
+        <h2>
+          <span class="header-pronoun">I</span>
+          <span>{{ direction() === 'LENT' ? 'Lent / Gave' : 'Borrowed / Owe' }}</span>
+        </h2>
+      </div>
+      <button class="icon-btn" (click)="onClose()" title="Close">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+
+    <!-- Direction Segment (Lend vs Borrow) -->
+    <div class="segment-wrap">
+      <button
+        type="button"
+        class="segment-btn"
+        [class.active-lent]="direction() === 'LENT'"
+        (click)="setDirection('LENT')"
+      >
+        Lend (They owe you)
+      </button>
+      <button
+        type="button"
+        class="segment-btn"
+        [class.active-borrow]="direction() === 'BORROWED'"
+        (click)="setDirection('BORROWED')"
+      >
+        Borrow (You owe them)
+      </button>
+    </div>
+
+    <!-- Type Segment (Money vs Item vs Commitment) -->
+    <div class="type-segment">
+      <button
+        type="button"
+        class="type-btn"
+        [class.selected]="entryType() === 'MONEY'"
+        (click)="setEntryType('MONEY')"
+      >
+        <ion-icon name="cash-outline"></ion-icon>
+        <span>Money</span>
+      </button>
+      <button
+        type="button"
+        class="type-btn"
+        [class.selected]="entryType() === 'ITEM'"
+        (click)="setEntryType('ITEM')"
+      >
+        <ion-icon name="cube-outline"></ion-icon>
+        <span>Item</span>
+      </button>
+      <button
+        type="button"
+        class="type-btn"
+        [class.selected]="entryType() === 'COMMITMENT'"
+        (click)="setEntryType('COMMITMENT')"
+      >
+        <ion-icon name="checkbox-outline"></ion-icon>
+        <span>Commitment</span>
+      </button>
+    </div>
+
+    <form (ngSubmit)="saveEntry()" class="modal-form">
+      <!-- Who Selector -->
+      <div class="form-group">
+        <div class="label-row">
+          <label for="personSelect">Who? <span class="required">*</span></label>
+          <button
+            type="button"
+            class="link-action-btn"
+            (click)="showAddPersonModal.set(true)"
+          >
+            <ion-icon name="person-add-outline"></ion-icon>
+            <span>New Person</span>
+          </button>
+        </div>
+
+        <select
+          id="personSelect"
+          class="form-input form-select"
+          [(ngModel)]="selectedPersonId"
+          name="selectedPersonId"
+          required
+        >
+          <option value="" disabled>Select a person...</option>
+          @for (p of state.people(); track p.id) {
+            @if (!p.isArchived) {
+              <option [value]="p.id">{{ p.name }}</option>
+            }
+          }
+        </select>
+      </div>
+
+      <!-- If MONEY: Title & Amount -->
+      @if (entryType() === 'MONEY') {
+        <div class="form-group">
+          <label for="moneyAmount">Amount ({{ state.settings().currencySymbol }}) <span class="required">*</span></label>
+          <input
+            id="moneyAmount"
+            type="number"
+            class="form-input font-mono amount-input"
+            placeholder="2000"
+            [(ngModel)]="amount"
+            name="amount"
+            min="1"
+            required
+            autofocus
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="moneyTitle">For What? (Optional description)</label>
+          <input
+            id="moneyTitle"
+            type="text"
+            class="form-input"
+            placeholder="e.g. Dinner split, Rent share, Cash loan..."
+            [(ngModel)]="title"
+            name="title"
+          />
+        </div>
+      }
+
+      <!-- If ITEM: Name & Description -->
+      @if (entryType() === 'ITEM') {
+        <div class="form-group">
+          <label for="itemName">Item Name <span class="required">*</span></label>
+          <input
+            id="itemName"
+            type="text"
+            class="form-input"
+            placeholder="e.g. Sony Headphones, Clean Code book, Camera..."
+            [(ngModel)]="title"
+            name="title"
+            required
+            autofocus
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="itemDesc">Details / Condition (Optional)</label>
+          <input
+            id="itemDesc"
+            type="text"
+            class="form-input"
+            placeholder="e.g. With USB-C cable and carrying case"
+            [(ngModel)]="description"
+            name="description"
+          />
+        </div>
+      }
+
+      <!-- If COMMITMENT: Title -->
+      @if (entryType() === 'COMMITMENT') {
+        <div class="form-group">
+          <label for="commTitle">Commitment / Task <span class="required">*</span></label>
+          <input
+            id="commTitle"
+            type="text"
+            class="form-input"
+            placeholder="e.g. Send project document, Share contact..."
+            [(ngModel)]="title"
+            name="title"
+            required
+            autofocus
+          />
+        </div>
+      }
+
+      <!-- Due Date & Presets -->
+      <div class="form-group">
+        <label for="dueDate">
+          {{ entryType() === 'ITEM' ? 'Return by' : 'Due Date' }} (Optional)
+        </label>
+        <div class="date-presets">
+          <button type="button" class="preset-btn" (click)="setDuePreset(3)">+3 Days</button>
+          <button type="button" class="preset-btn" (click)="setDuePreset(7)">+1 Week</button>
+          <button type="button" class="preset-btn" (click)="setDuePreset(30)">+1 Month</button>
+          <button type="button" class="preset-btn" (click)="dueDate = ''">Clear</button>
+        </div>
+        <input
+          id="dueDate"
+          type="date"
+          class="form-input"
+          [(ngModel)]="dueDate"
+          name="dueDate"
+        />
+        @if (getDueDateStatus(); as status) {
+          <div
+            class="due-date-hint animate-fade-in"
+            [class.past-hint]="status.isPast"
+            [class.future-hint]="!status.isPast"
+          >
+            <span>{{ status.isPast ? '⚠️' : '📅' }}</span>
+            <span>{{ status.label }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" (click)="onClose()">
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="btn-primary"
+          [disabled]="!isValid() || isSubmitting()"
+        >
+          {{ isSubmitting() ? 'Saving...' : 'Save Obligation' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Quick Add Person Modal if triggered from here -->
+@if (showAddPersonModal()) {
+  <app-add-person-modal
+    (personCreated)="onNewPersonCreated($event)"
+    (closed)="showAddPersonModal.set(false)"
+  ></app-add-person-modal>
+}

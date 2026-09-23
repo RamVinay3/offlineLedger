@@ -1,0 +1,108 @@
+<div class="page-container">
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-title-wrap">
+      <ion-icon name="people-outline" class="header-icon"></ion-icon>
+      <h1>People & Relationships</h1>
+    </div>
+    <button class="btn-primary add-btn" (click)="showAddModal.set(true)">
+      <ion-icon name="person-add-outline"></ion-icon>
+      <span>Add</span>
+    </button>
+  </header>
+
+  <main class="content-body">
+    <!-- Search Bar -->
+    <div class="search-bar-wrap">
+      <ion-icon name="search-outline" class="search-icon"></ion-icon>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Search by name, phone, email..."
+        [(ngModel)]="searchQuery"
+      />
+      @if (searchQuery) {
+        <button class="clear-search-btn" (click)="searchQuery = ''">✕</button>
+      }
+    </div>
+
+    <!-- People Directory -->
+    @if (filteredPeople().length === 0) {
+      <div class="empty-state card-container">
+        <div class="empty-icon-wrap">
+          <ion-icon name="people-outline"></ion-icon>
+        </div>
+        <h3>No people found</h3>
+        <p>
+          {{ searchQuery ? 'No contacts match "' + searchQuery + '"' : 'Add friends, colleagues, or family to start tracking obligations.' }}
+        </p>
+        <button class="btn-primary" (click)="showAddModal.set(true)">
+          <ion-icon name="person-add-outline"></ion-icon>
+          Add First Person
+        </button>
+      </div>
+    } @else {
+      <div class="people-grid">
+        @for (item of filteredPeople(); track item.personId) {
+          <div class="person-card card-container card-interactive" (click)="openPerson(item.personId)">
+            <div class="card-left">
+              <div class="avatar-circle">
+                {{ item.personName.substring(0, 1).toUpperCase() }}
+              </div>
+              <div class="person-meta">
+                <div class="name-line">
+                  <span class="person-name">{{ item.personName }}</span>
+                  @if (item.hasOverdue) {
+                    <span class="badge-pill badge-owing overdue-badge">🔴 Overdue</span>
+                  }
+                </div>
+
+                <div class="active-sub">
+                  <span>{{ item.activeObligationsCount }} active obligations</span>
+                  @if (item.activeItemsCount > 0) {
+                    <span class="items-count-badge">
+                      <ion-icon name="cube-outline"></ion-icon>
+                      {{ item.activeItemsCount }} {{ item.activeItemsCount === 1 ? 'item' : 'items' }}
+                    </span>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <div class="card-right">
+              <!-- Net Balance Pill -->
+              <div class="balance-display font-mono">
+                @if (item.netBalance > 0) {
+                  <div class="net-pill pill-owed">
+                    +{{ state.settings().currencySymbol }}{{ item.netBalance.toLocaleString() }}
+                  </div>
+                  <span class="net-direction-sub">owes you</span>
+                } @else if (item.netBalance < 0) {
+                  <div class="net-pill pill-owing">
+                    -{{ state.settings().currencySymbol }}{{ Math.abs(item.netBalance).toLocaleString() }}
+                  </div>
+                  <span class="net-direction-sub">you owe</span>
+                } @else {
+                  <div class="net-pill pill-settled">
+                    {{ state.settings().currencySymbol }}0
+                  </div>
+                  <span class="net-direction-sub">settled</span>
+                }
+              </div>
+
+              <ion-icon name="chevron-forward-outline" class="chevron"></ion-icon>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </main>
+
+  <!-- Add Person Modal -->
+  @if (showAddModal()) {
+    <app-add-person-modal
+      (personCreated)="onPersonCreated($event)"
+      (closed)="showAddModal.set(false)"
+    ></app-add-person-modal>
+  }
+</div>

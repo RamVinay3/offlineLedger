@@ -1,0 +1,106 @@
+/**
+ * LOOP — Design Tokens & CSS Variables
+ * 100% Offline Personal Relationship Ledger
+ * Uses rem units, dark-first obsidian palette, and luminous financial status accents.
+ */
+
+:root {
+  /* Brand Typography */
+  --loop-font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --loop-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Color Palette - Dark Obsidian Mode (Default) */
+  --loop-bg-base: #090d16;
+  --loop-bg-surface: #111827;
+  --loop-bg-surface-elevated: #1e293b;
+  --loop-bg-surface-glass: rgba(17, 24, 39, 0.75);
+  --loop-border-subtle: rgba(255, 255, 255, 0.08);
+  --loop-border-focus: rgba(99, 102, 241, 0.5);
+
+  /* Financial Status Accents */
+  --loop-owed: #10b981;          /* Emerald: Others owe you */
+  --loop-owed-bg: rgba(16, 185, 129, 0.12);
+  --loop-owed-border: rgba(16, 185, 129, 0.25);
+
+  --loop-owing: #f43f5e;         /* Rose: You owe others */
+  --loop-owing-bg: rgba(244, 63, 94, 0.12);
+  --loop-owing-border: rgba(244, 63, 94, 0.25);
+
+  --loop-attention: #f59e0b;     /* Amber: Due soon / warning */
+  --loop-attention-bg: rgba(245, 158, 11, 0.12);
+  --loop-attention-border: rgba(245, 158, 11, 0.25);
+
+  --loop-neutral: #64748b;       /* Slate: Settled / neutral */
+  --loop-neutral-bg: rgba(100, 116, 139, 0.12);
+  --loop-neutral-border: rgba(100, 116, 139, 0.25);
+
+  --loop-accent: #6366f1;        /* Indigo: Primary app accent */
+  --loop-accent-glow: rgba(99, 102, 241, 0.2);
+
+  --loop-item-accent: #8b5cf6;   /* Purple: Physical items */
+  --loop-item-bg: rgba(139, 92, 246, 0.12);
+  --loop-item-border: rgba(139, 92, 246, 0.25);
+
+  /* Text Colors */
+  --loop-text-primary: #f8fafc;
+  --loop-text-secondary: #94a3b8;
+  --loop-text-muted: #64748b;
+
+  /* Shadows & Glass */
+  --loop-shadow-sm: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.2);
+  --loop-shadow-md: 0 0.25rem 0.875rem rgba(0, 0, 0, 0.35);
+  --loop-shadow-lg: 0 0.625rem 1.75rem rgba(0, 0, 0, 0.5);
+  --loop-glass-blur: blur(1rem);
+
+  /* Bottom Navigation Tab Bar (Dark Obsidian Default) */
+  --loop-tabbar-bg: rgba(17, 24, 39, 0.92);
+  --loop-tabbar-border: rgba(255, 255, 255, 0.08);
+  --loop-tabbar-shadow: 0 -0.25rem 1.25rem rgba(0, 0, 0, 0.35);
+  --loop-tabbar-item-color: #64748b;
+  --loop-tabbar-item-active: #818cf8;
+  --loop-tabbar-fab-border: #090d16;
+
+  /* Ionic Overrides to match LOOP aesthetics */
+  --ion-font-family: var(--loop-font-sans);
+  --ion-background-color: var(--loop-bg-base);
+  --ion-text-color: var(--loop-text-primary);
+  --ion-toolbar-background: var(--loop-bg-base);
+  --ion-toolbar-color: var(--loop-text-primary);
+  --ion-toolbar-border-color: var(--loop-border-subtle);
+  --ion-item-background: transparent;
+  --ion-item-color: var(--loop-text-primary);
+  --ion-color-primary: var(--loop-accent);
+  --ion-color-primary-rgb: 99, 102, 241;
+  --ion-color-primary-contrast: #ffffff;
+}
+
+/* Light Mode Overrides (Optional user toggle) */
+body.light-theme, html.light-theme {
+  --loop-bg-base: #f8fafc;
+  --loop-bg-surface: #ffffff;
+  --loop-bg-surface-elevated: #f1f5f9;
+  --loop-bg-surface-glass: rgba(255, 255, 255, 0.85);
+  --loop-border-subtle: rgba(0, 0, 0, 0.08);
+  --loop-border-focus: rgba(99, 102, 241, 0.4);
+
+  --loop-text-primary: #0f172a;
+  --loop-text-secondary: #475569;
+  --loop-text-muted: #94a3b8;
+
+  --loop-shadow-sm: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.05);
+  --loop-shadow-md: 0 0.25rem 0.875rem rgba(0, 0, 0, 0.08);
+  --loop-shadow-lg: 0 0.625rem 1.75rem rgba(0, 0, 0, 0.12);
+
+  --loop-tabbar-bg: rgba(255, 255, 255, 0.94);
+  --loop-tabbar-border: rgba(0, 0, 0, 0.08);
+  --loop-tabbar-shadow: 0 -0.25rem 1.25rem rgba(15, 23, 42, 0.08);
+  --loop-tabbar-item-color: #64748b;
+  --loop-tabbar-item-active: #4f46e5;
+  --loop-tabbar-fab-border: #ffffff;
+
+  --ion-background-color: var(--loop-bg-base);
+  --ion-text-color: var(--loop-text-primary);
+  --ion-toolbar-background: var(--loop-bg-base);
+  --ion-toolbar-color: var(--loop-text-primary);
+  --ion-toolbar-border-color: var(--loop-border-subtle);
+}

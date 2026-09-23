@@ -1,0 +1,68 @@
+<div class="page-container">
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-title-wrap">
+      <ion-icon name="time-outline" class="header-icon"></ion-icon>
+      <h1>Activity & Audit Log</h1>
+    </div>
+    <span class="count-tag">{{ filteredActivities().length }} events</span>
+  </header>
+
+  <main class="content-body">
+    <!-- Search filter -->
+    <div class="search-bar-wrap">
+      <ion-icon name="search-outline" class="search-icon"></ion-icon>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Search events, people, notes..."
+        [(ngModel)]="searchQuery"
+      />
+      @if (searchQuery) {
+        <button class="clear-search-btn" (click)="searchQuery = ''">✕</button>
+      }
+    </div>
+
+    @if (filteredActivities().length === 0) {
+      <div class="empty-state card-container">
+        <div class="empty-icon-wrap">
+          <ion-icon name="time-outline"></ion-icon>
+        </div>
+        <h3>No events recorded</h3>
+        <p>
+          Every transaction, payment, return, and settlement creates an immutable history record here.
+        </p>
+      </div>
+    } @else {
+      <div class="timeline-stream">
+        @for (act of filteredActivities(); track act.id) {
+          <div
+            class="timeline-card-wrap"
+            [class.clickable]="act.personId"
+            (click)="openPerson(act.personId)"
+          >
+            <div class="timeline-bullet" [ngClass]="getBulletClass(act.eventType)">
+              <ion-icon [name]="getEventIcon(act.eventType)"></ion-icon>
+            </div>
+
+            <div class="timeline-card card-container card-interactive">
+              <div class="card-top">
+                <div class="person-tag">
+                  <ion-icon name="person-outline"></ion-icon>
+                  <span>{{ act.personName || 'System' }}</span>
+                </div>
+                <span class="time-tag font-mono">{{ formatTimestamp(act.createdAt) }}</span>
+              </div>
+
+              <div class="event-desc">{{ act.description }}</div>
+
+              <div class="event-type-badge">
+                {{ act.eventType.replace('_', ' ') }}
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </main>
+</div>

@@ -1,0 +1,57 @@
+@if (securityService.isLocked()) {
+  <div class="lock-overlay animate-fade-in">
+    <div class="lock-content glass-panel">
+      <div class="lock-header">
+        <div class="lock-icon-wrap">
+          <ion-icon name="lock-closed" class="lock-icon"></ion-icon>
+        </div>
+        <h1 class="lock-title">LOOP is Locked</h1>
+        <p class="lock-subtitle">Enter your 4-digit PIN to access your ledger</p>
+      </div>
+
+      <!-- PIN Dots Indicator -->
+      <div class="pin-indicator">
+        <div class="pin-dot" [class.filled]="enteredPin().length >= 1"></div>
+        <div class="pin-dot" [class.filled]="enteredPin().length >= 2"></div>
+        <div class="pin-dot" [class.filled]="enteredPin().length >= 3"></div>
+        <div class="pin-dot" [class.filled]="enteredPin().length >= 4"></div>
+      </div>
+
+      @if (errorMessage()) {
+        <p class="error-msg">{{ errorMessage() }}</p>
+      }
+
+      <!-- Keypad -->
+      <div class="keypad-grid">
+        @for (num of [1, 2, 3, 4, 5, 6, 7, 8, 9]; track num) {
+          <button class="keypad-btn" (click)="appendDigit(num.toString())">
+            {{ num }}
+          </button>
+        }
+
+        <!-- Biometrics Button -->
+        <button
+          class="keypad-btn action-btn"
+          [disabled]="!securityService.isBiometricsAvailable()"
+          (click)="unlockWithBiometrics()"
+          title="Biometric Unlock"
+        >
+          <ion-icon name="finger-print-outline"></ion-icon>
+        </button>
+
+        <!-- Zero -->
+        <button class="keypad-btn" (click)="appendDigit('0')">0</button>
+
+        <!-- Backspace -->
+        <button class="keypad-btn action-btn" (click)="backspace()">
+          <ion-icon name="backspace-outline"></ion-icon>
+        </button>
+      </div>
+
+      <div class="privacy-note">
+        <ion-icon name="shield-checkmark-outline"></ion-icon>
+        <span>Hardware-level encryption • 100% Offline</span>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,383 @@
+<div class="page-container">
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <button class="back-btn" (click)="goBack()" title="Back">
+      <ion-icon name="arrow-back-outline"></ion-icon>
+    </button>
+    <div class="header-name">
+      <h2>{{ currentPerson()?.name || 'Relationship Ledger' }}</h2>
+      @if (currentPerson()?.notes) {
+        <span class="header-sub">{{ currentPerson()?.notes }}</span>
+      }
+    </div>
+    <div class="header-right-action">
+      @if (currentBalance() && (currentBalance()!.totalOwedToYou > 0 || currentBalance()!.totalYouOwe > 0)) {
+        <button class="settle-header-btn" (click)="showSettlementModal.set(true)">
+          <ion-icon name="swap-horizontal-outline"></ion-icon>
+          <span>Settle</span>
+        </button>
+      }
+    </div>
+  </header>
+
+  <main class="ledger-content">
+    <!-- Relationship Net Balance Hero Card -->
+    @if (currentBalance()) {
+      <div class="net-hero-card card-container">
+        <div class="hero-top">
+          <span class="hero-label">RELATIONSHIP NET BALANCE</span>
+          <div class="avatar-large font-mono">
+            {{ currentPerson()?.name?.substring(0, 1)?.toUpperCase() }}
+          </div>
+        </div>
+
+        <!-- Net Balance Highlight -->
+        <div class="net-figure-row">
+          <div
+            class="net-figure font-mono"
+            [class.text-owed]="currentBalance()!.netBalance > 0"
+            [class.text-owing]="currentBalance()!.netBalance < 0"
+          >
+            ₹{{ Math.abs(currentBalance()!.netBalance).toLocaleString() }}
+          </div>
+          <div class="net-direction-badge">
+            @if (currentBalance()!.netBalance > 0) {
+              <span class="badge-pill badge-owed">{{ currentPerson()?.name }} owes you</span>
+            } @else if (currentBalance()!.netBalance < 0) {
+              <span class="badge-pill badge-owing">You owe {{ currentPerson()?.name }}</span>
+            } @else {
+              <span class="badge-pill badge-neutral">✓ All Settled</span>
+            }
+          </div>
+        </div>
+
+        <!-- Detailed Breakdown -->
+        <div class="breakdown-grid">
+          <div class="sub-metric">
+            <span class="sub-label">YOU ARE OWED</span>
+            <span class="sub-val font-mono text-owed">₹{{ currentBalance()!.totalOwedToYou.toLocaleString() }}</span>
+          </div>
+          <div class="divider"></div>
+          <div class="sub-metric">
+            <span class="sub-label">YOU OWE</span>
+            <span class="sub-val font-mono text-owing">₹{{ currentBalance()!.totalYouOwe.toLocaleString() }}</span>
+          </div>
+        </div>
+
+        <!-- Settle Net Balance Button -->
+        @if (currentBalance()!.totalOwedToYou > 0 || currentBalance()!.totalYouOwe > 0) {
+          <button class="settle-action-btn" (click)="showSettlementModal.set(true)">
+            <ion-icon name="checkmark-done-outline"></ion-icon>
+            Settle Net Balance
+          </button>
+        }
+      </div>
+    }
+
+    <!-- Quick Add Action Row -->
+    <div class="quick-action-row">
+      <button class="quick-btn" (click)="openFastEntry('LENT', 'MONEY')">
+        <ion-icon name="arrow-down-outline" class="text-owed"></ion-icon>
+        <span>Lend Money</span>
+      </button>
+      <button class="quick-btn" (click)="openFastEntry('BORROWED', 'MONEY')">
+        <ion-icon name="arrow-up-outline" class="text-owing"></ion-icon>
+        <span>Borrow Money</span>
+      </button>
+      <button class="quick-btn" (click)="openFastEntry('LENT', 'ITEM')">
+        <ion-icon name="cube-outline" class="text-item"></ion-icon>
+        <span>Lend Item</span>
+      </button>
+    </div>
+
+    <!-- Section Navigation Tabs -->
+    <div class="section-tabs">
+      <button
+        class="tab-btn"
+        [class.active]="selectedTab() === 'MONEY'"
+        (click)="selectedTab.set('MONEY')"
+      >
+        <ion-icon name="cash-outline"></ion-icon>
+        <span>Money ({{ moneyObligations().length }})</span>
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="selectedTab() === 'ITEMS'"
+        (click)="selectedTab.set('ITEMS')"
+      >
+        <ion-icon name="cube-outline"></ion-icon>
+        <span>Items ({{ itemObligations().length }})</span>
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="selectedTab() === 'COMMITMENTS'"
+        (click)="selectedTab.set('COMMITMENTS')"
+      >
+        <ion-icon name="checkbox-outline"></ion-icon>
+        <span>Commitments ({{ commitmentObligations().length }})</span>
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="selectedTab() === 'TIMELINE'"
+        (click)="selectedTab.set('TIMELINE')"
+      >
+        <ion-icon name="time-outline"></ion-icon>
+        <span>Timeline</span>
+      </button>
+    </div>
+
+    <!-- TAB CONTENT: MONEY -->
+    @if (selectedTab() === 'MONEY') {
+      <div class="tab-pane">
+        @if (moneyObligations().length === 0) {
+          <div class="empty-tab card-container">
+            <p>No money obligations with {{ currentPerson()?.name }}.</p>
+            <button class="btn-secondary" (click)="openFastEntry('LENT', 'MONEY')">
+              + Add First Loan
+            </button>
+          </div>
+        } @else {
+          <div class="card-list">
+            @for (ob of moneyObligations(); track ob.id) {
+              <div class="ledger-item-card card-container">
+                <div class="item-header">
+                  <div class="direction-badge-wrap">
+                    @if (ob.direction === 'LENT') {
+                      <span class="badge-pill badge-owed">Lent by You</span>
+                    } @else {
+                      <span class="badge-pill badge-owing">Borrowed by You</span>
+                    }
+                    <span class="date-tag">{{ formatDate(ob.createdAt) }}</span>
+                  </div>
+
+                  <div class="item-amount font-mono" [class.text-owed]="ob.direction === 'LENT'" [class.text-owing]="ob.direction === 'BORROWED'">
+                    {{ ob.currency }}{{ ob.remainingAmount.toLocaleString() }}
+                  </div>
+                </div>
+
+                <div class="item-title">{{ ob.title }}</div>
+                @if (ob.description) {
+                  <div class="item-desc">{{ ob.description }}</div>
+                }
+
+                <!-- Progress bar -->
+                @if (ob.status !== 'CANCELLED') {
+                  <div class="progress-bar-container">
+                    <div
+                      class="progress-fill"
+                      [style.width.%]="getPaymentProgress(ob)"
+                      [class.fill-owed]="ob.direction === 'LENT'"
+                      [class.fill-owing]="ob.direction === 'BORROWED'"
+                    ></div>
+                  </div>
+                  <div class="repaid-meta">
+                    <span>Original: {{ ob.currency }}{{ ob.amount.toLocaleString() }}</span>
+                    @if (ob.status === 'COMPLETED') {
+                      <span class="badge-pill badge-neutral">Fully Settled</span>
+                    } @else {
+                      <span>Paid: {{ ob.currency }}{{ (ob.amount - ob.remainingAmount).toLocaleString() }}</span>
+                    }
+                  </div>
+                }
+
+                <!-- Payment history for this obligation -->
+                @if (ob.payments.length > 0) {
+                  <div class="payment-history-wrap">
+                    <span class="history-title">Repayment History:</span>
+                    @for (pmt of ob.payments; track pmt.id) {
+                      <div class="history-entry">
+                        <span class="date font-mono">{{ formatDate(pmt.paymentDate) }}</span>
+                        <span class="amount font-mono">+{{ ob.currency }}{{ pmt.amount.toLocaleString() }}</span>
+                        @if (pmt.notes) {
+                          <span class="notes">({{ pmt.notes }})</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+
+                <div class="item-footer">
+                  <div class="due-info">
+                    @if (ob.status === 'COMPLETED') {
+                      <span class="badge-pill badge-neutral">✓ Closed</span>
+                    } @else if (ob.dueDate) {
+                      @if (isOverdue(ob.dueDate)) {
+                        <span class="badge-pill badge-owing">🔴 Overdue ({{ formatDate(ob.dueDate) }})</span>
+                      } @else {
+                        <span class="badge-pill badge-attention">Due {{ formatDate(ob.dueDate) }}</span>
+                      }
+                    }
+                  </div>
+
+                  @if (ob.status !== 'COMPLETED') {
+                    <button class="btn-primary action-btn-sm" (click)="openPaymentModal(ob)">
+                      Record Payment
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- TAB CONTENT: ITEMS -->
+    @if (selectedTab() === 'ITEMS') {
+      <div class="tab-pane">
+        @if (itemObligations().length === 0) {
+          <div class="empty-tab card-container">
+            <p>No physical items tracked with {{ currentPerson()?.name }}.</p>
+            <button class="btn-secondary" (click)="openFastEntry('LENT', 'ITEM')">
+              + Track Item
+            </button>
+          </div>
+        } @else {
+          <div class="card-list">
+            @for (item of itemObligations(); track item.id) {
+              <div class="ledger-item-card card-container">
+                <div class="item-header">
+                  <div class="direction-badge-wrap">
+                    <span class="badge-pill badge-item">
+                      <ion-icon name="cube-outline"></ion-icon>
+                      {{ item.direction === 'LENT' ? 'You Lent Item' : 'You Borrowed' }}
+                    </span>
+                    <span class="date-tag">Since {{ formatDate(item.createdAt) }}</span>
+                  </div>
+
+                  @if (item.status === 'COMPLETED') {
+                    <span class="badge-pill badge-neutral">✓ Returned</span>
+                  } @else {
+                    <span class="badge-pill badge-owed">Active</span>
+                  }
+                </div>
+
+                <div class="item-title">{{ item.title }}</div>
+                @if (item.description) {
+                  <div class="item-desc">{{ item.description }}</div>
+                }
+
+                <div class="item-footer">
+                  <div class="due-info">
+                    @if (item.dueDate) {
+                      <span class="due-text">Return by: {{ formatDate(item.dueDate) }}</span>
+                    }
+                  </div>
+
+                  @if (item.status !== 'COMPLETED') {
+                    <button class="btn-primary action-btn-sm" (click)="returnItem(item)">
+                      Mark as Returned
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- TAB CONTENT: COMMITMENTS -->
+    @if (selectedTab() === 'COMMITMENTS') {
+      <div class="tab-pane">
+        @if (commitmentObligations().length === 0) {
+          <div class="empty-tab card-container">
+            <p>No pending commitments with {{ currentPerson()?.name }}.</p>
+            <button class="btn-secondary" (click)="openFastEntry('LENT', 'COMMITMENT')">
+              + Add Commitment
+            </button>
+          </div>
+        } @else {
+          <div class="card-list">
+            @for (c of commitmentObligations(); track c.id) {
+              <div class="ledger-item-card card-container">
+                <div class="item-header">
+                  <span class="badge-pill badge-attention">Commitment</span>
+                  @if (c.status === 'COMPLETED') {
+                    <span class="badge-pill badge-neutral">✓ Done</span>
+                  } @else {
+                    <span class="badge-pill badge-owed">Pending</span>
+                  }
+                </div>
+
+                <div class="item-title">{{ c.title }}</div>
+                @if (c.description) {
+                  <div class="item-desc">{{ c.description }}</div>
+                }
+
+                <div class="item-footer">
+                  <div class="due-info">
+                    @if (c.dueDate) {
+                      <span>Due: {{ formatDate(c.dueDate) }}</span>
+                    }
+                  </div>
+
+                  @if (c.status !== 'COMPLETED') {
+                    <button class="btn-primary action-btn-sm" (click)="completeCommitment(c)">
+                      Mark as Done
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- TAB CONTENT: TIMELINE / ACTIVITY -->
+    @if (selectedTab() === 'TIMELINE') {
+      <div class="tab-pane">
+        @if (personActivities().length === 0) {
+          <div class="empty-tab card-container">
+            <p>No activity recorded yet for this relationship.</p>
+          </div>
+        } @else {
+          <div class="timeline-stream">
+            @for (act of personActivities(); track act.id) {
+              <div class="timeline-card">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content card-container">
+                  <div class="act-header">
+                    <span class="act-type-tag">{{ formatEventType(act.eventType) }}</span>
+                    <span class="act-time">{{ formatDate(act.createdAt) }}</span>
+                  </div>
+                  <div class="act-desc">{{ act.description }}</div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </main>
+
+  <!-- Fast Entry Modal Overlay -->
+  @if (showFastEntry()) {
+    <app-fast-entry-modal
+      [initialPersonId]="personId()"
+      [initialDirection]="fastEntryDirection()"
+      [initialType]="fastEntryType()"
+      (saved)="onFastEntrySaved()"
+      (closed)="showFastEntry.set(false)"
+    ></app-fast-entry-modal>
+  }
+
+  <!-- Payment Modal Overlay -->
+  @if (selectedObligationForPayment()) {
+    <app-payment-modal
+      [obligation]="selectedObligationForPayment()!"
+      (paymentRecorded)="onPaymentRecorded()"
+      (closed)="selectedObligationForPayment.set(null)"
+    ></app-payment-modal>
+  }
+
+  <!-- Settlement Modal Overlay -->
+  @if (showSettlementModal() && currentBalance()) {
+    <app-settlement-modal
+      [balance]="currentBalance()!"
+      (settled)="onSettled()"
+      (closed)="showSettlementModal.set(false)"
+    ></app-settlement-modal>
+  }
+</div>

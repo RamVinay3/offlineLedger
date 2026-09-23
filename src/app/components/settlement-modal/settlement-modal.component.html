@@ -1,0 +1,79 @@
+<div class="modal-backdrop animate-fade-in" (click)="onClose()">
+  <div class="modal-dialog card-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="title-wrap">
+        <ion-icon name="swap-horizontal-outline" class="header-icon"></ion-icon>
+        <div>
+          <h2>Net Settlement</h2>
+          <span class="sub-text">Reconcile relationship with <strong>{{ balance().personName }}</strong></span>
+        </div>
+      </div>
+      <button class="icon-btn" (click)="onClose()" title="Close">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+
+    <!-- Breakdown Card -->
+    <div class="breakdown-card">
+      <div class="breakdown-row">
+        <span class="label">{{ balance().personName }} owes you:</span>
+        <span class="value font-mono text-owed">₹{{ balance().totalOwedToYou.toLocaleString() }}</span>
+      </div>
+      <div class="breakdown-row">
+        <span class="label">You owe {{ balance().personName }}:</span>
+        <span class="value font-mono text-owing">₹{{ balance().totalYouOwe.toLocaleString() }}</span>
+      </div>
+
+      <div class="net-summary">
+        <div class="net-label">FINAL NET SETTLEMENT:</div>
+        <div class="net-amount font-mono" [class.text-owed]="balance().netBalance > 0" [class.text-owing]="balance().netBalance < 0">
+          ₹{{ Math.abs(balance().netBalance).toLocaleString() }}
+        </div>
+        <div class="net-direction">
+          @if (balance().netBalance > 0) {
+            <span>{{ balance().personName }} → You (Collect)</span>
+          } @else if (balance().netBalance < 0) {
+            <span>You → {{ balance().personName }} (Pay)</span>
+          } @else {
+            <span>Balances are even (₹0)</span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <form (ngSubmit)="confirmSettlement()" class="modal-form">
+      <div class="form-group">
+        <label for="settlementNotes">Settlement Notes (Optional)</label>
+        <input
+          id="settlementNotes"
+          type="text"
+          class="form-input"
+          placeholder="e.g. Cleared via Google Pay, Cash settlement..."
+          [(ngModel)]="notes"
+          name="notes"
+        />
+      </div>
+
+      <div class="info-notice">
+        <ion-icon name="information-circle-outline"></ion-icon>
+        <span>
+          Marking as settled will clear active money obligations and record an immutable audit event in the timeline. Historical transactions are never deleted.
+        </span>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" (click)="onClose()">
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="btn-primary"
+          [disabled]="isSubmitting()"
+        >
+          <ion-icon name="checkmark-done-circle-outline"></ion-icon>
+          {{ isSubmitting() ? 'Settling...' : 'Confirm Net Settlement' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

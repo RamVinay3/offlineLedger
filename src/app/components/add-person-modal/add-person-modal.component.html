@@ -1,0 +1,95 @@
+<div class="modal-backdrop animate-fade-in" (click)="onClose()">
+  <div class="modal-dialog card-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="title-wrap">
+        <ion-icon name="person-add-outline" class="header-icon"></ion-icon>
+        <h2>Add Person</h2>
+      </div>
+      <button class="icon-btn" (click)="onClose()" title="Close">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+
+    <form (ngSubmit)="savePerson()" class="modal-form">
+      <div class="form-group">
+        <label for="personName">Name <span class="required">*</span></label>
+        <input
+          id="personName"
+          type="text"
+          class="form-input"
+          placeholder="e.g. Rahul, Amit, Neha"
+          [(ngModel)]="name"
+          name="name"
+          required
+          autofocus
+          (ngModelChange)="checkDuplicate()"
+        />
+      </div>
+
+      @if (duplicateWarning()) {
+        <div class="warning-banner">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          <span>{{ duplicateWarning() }}</span>
+        </div>
+      }
+
+      <div class="form-group">
+        <label for="personPhone">Phone Number (10 Digits)</label>
+        <input
+          id="personPhone"
+          type="tel"
+          class="form-input font-mono"
+          placeholder="9876543210"
+          maxlength="10"
+          inputmode="numeric"
+          pattern="[0-9]{10}"
+          [(ngModel)]="phoneNumber"
+          (keydown)="onPhoneKeyDown($event)"
+          (paste)="onPhonePaste($event)"
+          (input)="onPhoneInput($event)"
+          name="phoneNumber"
+        />
+        @if (phoneNumber && phoneNumber.length > 0 && phoneNumber.length < 10) {
+          <span class="phone-hint">{{ 10 - phoneNumber.length }} more digit(s) needed</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="personEmail">Email (Optional)</label>
+        <input
+          id="personEmail"
+          type="email"
+          class="form-input"
+          placeholder="rahul@example.com"
+          [(ngModel)]="email"
+          name="email"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="personNotes">Notes (Optional)</label>
+        <textarea
+          id="personNotes"
+          class="form-input form-textarea"
+          placeholder="College friend, colleague, flatmate..."
+          [(ngModel)]="notes"
+          name="notes"
+          rows="2"
+        ></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" (click)="onClose()">
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="btn-primary"
+          [disabled]="!name.trim() || isSubmitting()"
+        >
+          {{ isSubmitting() ? 'Saving...' : 'Add Person' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

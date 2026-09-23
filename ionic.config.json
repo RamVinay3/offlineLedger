@@ -1,0 +1,7 @@
+{
+  "name": "loop-app",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

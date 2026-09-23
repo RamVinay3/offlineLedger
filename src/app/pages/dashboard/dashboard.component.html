@@ -1,0 +1,317 @@
+<div class="page-container">
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="logo-area">
+      <div class="logo-badge">LOOP</div>
+      <span class="tagline">Personal Ledger</span>
+    </div>
+    <div class="header-right">
+      <span class="offline-pill">
+        <ion-icon name="shield-checkmark-outline"></ion-icon>
+        100% Offline
+      </span>
+    </div>
+  </header>
+
+  <!-- Main Scrollable Content -->
+  <main class="dashboard-content">
+    <!-- Top Metrics Section (Owed vs Owing) -->
+    <section class="metrics-grid">
+      <!-- YOU ARE OWED -->
+      <div class="metric-card card-owed">
+        <div class="metric-header">
+          <span class="metric-label">YOU ARE OWED</span>
+          <div class="dir-icon dir-owed">
+            <ion-icon name="arrow-down-outline"></ion-icon>
+          </div>
+        </div>
+        <div class="metric-value font-mono">
+          {{ state.settings().currencySymbol }}{{ state.dashboardSummary().totalOwedToYou.toLocaleString() }}
+        </div>
+        <div class="metric-sub">
+          <span>{{ state.dashboardSummary().peopleCountOwed }} people</span>
+          @if (state.dashboardSummary().activeItemsOwedCount > 0) {
+            <span>• {{ state.dashboardSummary().activeItemsOwedCount }} items</span>
+          }
+        </div>
+      </div>
+
+      <!-- YOU OWE -->
+      <div class="metric-card card-owing">
+        <div class="metric-header">
+          <span class="metric-label">YOU OWE</span>
+          <div class="dir-icon dir-owing">
+            <ion-icon name="arrow-up-outline"></ion-icon>
+          </div>
+        </div>
+        <div class="metric-value font-mono">
+          {{ state.settings().currencySymbol }}{{ state.dashboardSummary().totalYouOwe.toLocaleString() }}
+        </div>
+        <div class="metric-sub">
+          <span>{{ state.dashboardSummary().peopleCountOwing }} people</span>
+          @if (state.dashboardSummary().activeItemsOwingCount > 0) {
+            <span>• {{ state.dashboardSummary().activeItemsOwingCount }} items</span>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Net Position Banner -->
+    @if (state.dashboardSummary().totalOwedToYou > 0 || state.dashboardSummary().totalYouOwe > 0) {
+      <div class="net-position-banner">
+        <span class="net-title">Overall Net Position:</span>
+        <span
+          class="net-val font-mono"
+          [class.text-owed]="state.dashboardSummary().netPosition > 0"
+          [class.text-owing]="state.dashboardSummary().netPosition < 0"
+        >
+          @if (state.dashboardSummary().netPosition > 0) {
+            +{{ state.settings().currencySymbol }}{{ state.dashboardSummary().netPosition.toLocaleString() }} (You are net owed)
+          } @else if (state.dashboardSummary().netPosition < 0) {
+            -{{ state.settings().currencySymbol }}{{ Math.abs(state.dashboardSummary().netPosition).toLocaleString() }} (You net owe)
+          } @else {
+            Even balance ({{ state.settings().currencySymbol }}0)
+          }
+        </span>
+      </div>
+    }
+
+    <!-- NEEDS ATTENTION SECTION -->
+    @if (state.needsAttentionObligations().length > 0) {
+      <section class="attention-section">
+        <div class="section-title-wrap">
+          <ion-icon name="alert-circle" class="attention-icon"></ion-icon>
+          <h2 class="section-title">Needs Attention</h2>
+        </div>
+
+        <div class="attention-list">
+          @for (ob of state.needsAttentionObligations(); track ob.id) {
+            <div class="attention-item card-interactive" (click)="openPerson(ob.personId)">
+              <div class="attention-indicator" [class.overdue]="isOverdue(ob.dueDate)" [class.due-soon]="!isOverdue(ob.dueDate)"></div>
+              <div class="attention-info">
+                <div class="attention-title-line">
+                  <span class="attention-person">{{ ob.personName }}</span>
+                  @if (ob.type === 'MONEY') {
+                    <span class="attention-amount font-mono">
+                      {{ ob.currency }}{{ ob.remainingAmount.toLocaleString() }}
+                    </span>
+                  } @else {
+                    <span class="attention-item-name">{{ ob.title }}</span>
+                  }
+                </div>
+                <div class="attention-status-line">
+                  @if (isOverdue(ob.dueDate)) {
+                    <span class="badge-pill badge-owing">🔴 Overdue</span>
+                  } @else {
+                    <span class="badge-pill badge-attention">🟡 Due Soon ({{ formatDate(ob.dueDate!) }})</span>
+                  }
+                  <span class="direction-tag">
+                    {{ ob.direction === 'LENT' ? 'They owe you' : 'You owe them' }}
+                  </span>
+                </div>
+              </div>
+              <ion-icon name="chevron-forward-outline" class="chevron"></ion-icon>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Search & Filter Controls -->
+    <section class="controls-section">
+      <!-- Search Bar -->
+      <div class="search-bar-wrap">
+        <ion-icon name="search-outline" class="search-icon"></ion-icon>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Search people, items, notes..."
+          [ngModel]="state.searchQuery()"
+          (ngModelChange)="state.searchQuery.set($event)"
+        />
+        @if (state.searchQuery()) {
+          <button class="clear-search-btn" (click)="state.searchQuery.set('')">✕</button>
+        }
+      </div>
+
+      <!-- Filter Chips -->
+      <div class="filter-chips">
+        @for (f of filters; track f.key) {
+          <button
+            class="chip-btn"
+            [class.active]="state.activeFilter() === f.key"
+            (click)="state.activeFilter.set(f.key)"
+          >
+            {{ f.label }}
+          </button>
+        }
+      </div>
+    </section>
+
+    <!-- Obligations Stream -->
+    <section class="obligations-stream">
+      <div class="stream-header">
+        <h2 class="section-title">
+          {{ getFilterTitle(state.activeFilter()) }}
+          <span class="count-badge">({{ state.filteredObligations().length }})</span>
+        </h2>
+      </div>
+
+      @if (state.filteredObligations().length === 0) {
+        <!-- Empty State -->
+        <div class="empty-state card-container">
+          <div class="empty-icon-wrap">
+            <ion-icon name="checkmark-done-outline"></ion-icon>
+          </div>
+          @if (state.searchQuery()) {
+            <h3>No results found</h3>
+            <p>No obligations match "{{ state.searchQuery() }}". Try adjusting your search term.</p>
+          } @else if (state.activeFilter() === 'COMPLETED') {
+            <h3>No completed obligations</h3>
+            <p>Settled debts, returned items, and fulfilled commitments will appear in this history.</p>
+          } @else {
+            <h3>Nothing owed yet</h3>
+            <p>
+              When you lend money, lend an item, or create an obligation, it will appear here.
+            </p>
+            <button class="btn-primary" (click)="showFastEntry.set(true)">
+              <ion-icon name="add-outline"></ion-icon>
+              Add Your First Obligation
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="obligation-cards">
+          @for (ob of state.filteredObligations(); track ob.id) {
+            <div class="obligation-card card-container card-interactive" (click)="openPerson(ob.personId)">
+              <!-- Card Header: Person & Type -->
+              <div class="ob-card-top">
+                <div class="ob-person-meta">
+                  <div class="avatar-circle">
+                    {{ ob.personName.substring(0, 1).toUpperCase() }}
+                  </div>
+                  <div>
+                    <div class="person-name">{{ ob.personName }}</div>
+                    <div class="ob-type-pill">
+                      @if (ob.type === 'MONEY') {
+                        <ion-icon name="cash-outline"></ion-icon>
+                        <span>{{ ob.direction === 'LENT' ? 'You Lent' : 'You Borrowed' }}</span>
+                      } @else if (ob.type === 'ITEM') {
+                        <ion-icon name="cube-outline"></ion-icon>
+                        <span>{{ ob.direction === 'LENT' ? 'Item Lent' : 'Item Borrowed' }}</span>
+                      } @else {
+                        <ion-icon name="checkbox-outline"></ion-icon>
+                        <span>Commitment</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right Amount / Status -->
+                <div class="ob-amount-area">
+                  @if (ob.type === 'MONEY') {
+                    <div
+                      class="amount-display font-mono"
+                      [class.text-owed]="ob.direction === 'LENT'"
+                      [class.text-owing]="ob.direction === 'BORROWED'"
+                    >
+                      {{ ob.currency }}{{ ob.remainingAmount.toLocaleString() }}
+                    </div>
+                    @if (ob.remainingAmount < ob.amount && ob.status !== 'COMPLETED') {
+                      <div class="orig-sub font-mono">
+                        of {{ ob.currency }}{{ ob.amount.toLocaleString() }}
+                      </div>
+                    }
+                  } @else {
+                    <span class="badge-pill" [class.badge-item]="ob.status !== 'COMPLETED'" [class.badge-neutral]="ob.status === 'COMPLETED'">
+                      {{ ob.status === 'COMPLETED' ? 'Returned' : 'Active' }}
+                    </span>
+                  }
+                </div>
+              </div>
+
+              <!-- Title & Details -->
+              <div class="ob-details">
+                <div class="ob-title">{{ ob.title }}</div>
+                @if (ob.description) {
+                  <div class="ob-desc">{{ ob.description }}</div>
+                }
+              </div>
+
+              <!-- Partial Payment Progress Bar for Money -->
+              @if (ob.type === 'MONEY' && ob.amount > 0 && ob.status !== 'CANCELLED') {
+                <div class="progress-bar-container">
+                  <div
+                    class="progress-fill"
+                    [style.width.%]="getPaymentProgress(ob)"
+                    [class.fill-owed]="ob.direction === 'LENT'"
+                    [class.fill-owing]="ob.direction === 'BORROWED'"
+                  ></div>
+                </div>
+              }
+
+              <!-- Card Footer: Due Date & Actions -->
+              <div class="ob-card-footer">
+                <div class="footer-left">
+                  @if (ob.status === 'COMPLETED') {
+                    <span class="badge-pill badge-neutral">✓ Settled</span>
+                  } @else if (ob.dueDate) {
+                    @if (isOverdue(ob.dueDate)) {
+                      <span class="badge-pill badge-owing">🔴 Overdue ({{ formatDate(ob.dueDate) }})</span>
+                    } @else {
+                      <span class="badge-pill badge-attention">Due {{ formatDate(ob.dueDate) }}</span>
+                    }
+                  } @else {
+                    <span class="no-due">No due date</span>
+                  }
+                </div>
+
+                <div class="footer-actions" (click)="$event.stopPropagation()">
+                  @if (ob.type === 'MONEY' && ob.status !== 'COMPLETED') {
+                    <button
+                      class="action-pill-btn"
+                      (click)="openPaymentModal(ob)"
+                    >
+                      Record Payment
+                    </button>
+                  } @else if (ob.type === 'ITEM' && ob.status !== 'COMPLETED') {
+                    <button
+                      class="action-pill-btn"
+                      (click)="returnItem(ob)"
+                    >
+                      Mark Returned
+                    </button>
+                  } @else if (ob.type === 'COMMITMENT' && ob.status !== 'COMPLETED') {
+                    <button
+                      class="action-pill-btn"
+                      (click)="completeCommitment(ob)"
+                    >
+                      Done
+                    </button>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  </main>
+
+  <!-- Fast Entry Modal Overlay -->
+  @if (showFastEntry()) {
+    <app-fast-entry-modal
+      (saved)="onFastEntrySaved()"
+      (closed)="showFastEntry.set(false)"
+    ></app-fast-entry-modal>
+  }
+
+  <!-- Payment Modal Overlay -->
+  @if (selectedObligationForPayment()) {
+    <app-payment-modal
+      [obligation]="selectedObligationForPayment()!"
+      (paymentRecorded)="onPaymentRecorded()"
+      (closed)="selectedObligationForPayment.set(null)"
+    ></app-payment-modal>
+  }
+</div>

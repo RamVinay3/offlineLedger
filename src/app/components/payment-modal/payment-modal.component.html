@@ -1,0 +1,125 @@
+<div class="modal-backdrop animate-fade-in" (click)="onClose()">
+  <div class="modal-dialog card-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="title-wrap">
+        <ion-icon name="cash-outline" class="header-icon"></ion-icon>
+        <div>
+          <h2>Record Payment</h2>
+          <span class="sub-text">
+            {{ obligation().direction === 'LENT' ? 'Received from' : 'Repaying' }}
+            <strong>{{ obligation().personName }}</strong>
+          </span>
+        </div>
+      </div>
+      <button class="icon-btn" (click)="onClose()" title="Close">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+
+    <!-- Balance Info Card -->
+    <div class="balance-card">
+      <div class="balance-row">
+        <span class="label">Original:</span>
+        <span class="value font-mono">{{ obligation().currency }}{{ obligation().amount.toLocaleString() }}</span>
+      </div>
+      <div class="balance-row current">
+        <span class="label">Current Balance:</span>
+        <span class="value font-mono highlight">{{ obligation().currency }}{{ obligation().remainingAmount.toLocaleString() }}</span>
+      </div>
+    </div>
+
+    <form (ngSubmit)="submitPayment()" class="modal-form">
+      <!-- Quick Presets -->
+      <div class="presets-row">
+        <button
+          type="button"
+          class="preset-chip"
+          (click)="setAmount(obligation().remainingAmount)"
+        >
+          Full ({{ obligation().currency }}{{ obligation().remainingAmount.toLocaleString() }})
+        </button>
+        @if (obligation().remainingAmount > 100) {
+          <button
+            type="button"
+            class="preset-chip"
+            (click)="setAmount(Math.round(obligation().remainingAmount / 2))"
+          >
+            Half ({{ obligation().currency }}{{ Math.round(obligation().remainingAmount / 2).toLocaleString() }})
+          </button>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="paymentAmount">Payment Amount ({{ obligation().currency }}) <span class="required">*</span></label>
+        <input
+          id="paymentAmount"
+          type="number"
+          class="form-input font-mono amount-input"
+          [(ngModel)]="amount"
+          name="amount"
+          min="1"
+          [max]="obligation().remainingAmount"
+          required
+          autofocus
+        />
+      </div>
+
+      <!-- Real-time Balance Preview -->
+      <div class="preview-box" [class.error]="isOverpayment()">
+        @if (isOverpayment()) {
+          <div class="preview-content error-text">
+            <ion-icon name="alert-circle-outline"></ion-icon>
+            <span>Cannot exceed remaining balance of {{ obligation().currency }}{{ obligation().remainingAmount.toLocaleString() }}</span>
+          </div>
+        } @else if (amount > 0) {
+          <div class="preview-content success-text">
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            <span>
+              Remaining balance after payment:
+              <strong>{{ obligation().currency }}{{ (obligation().remainingAmount - amount).toLocaleString() }}</strong>
+              @if (obligation().remainingAmount - amount === 0) {
+                <em>(Will be fully settled)</em>
+              }
+            </span>
+          </div>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="paymentDate">Date</label>
+        <input
+          id="paymentDate"
+          type="date"
+          class="form-input"
+          [(ngModel)]="paymentDate"
+          name="paymentDate"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="paymentNotes">Notes (Optional)</label>
+        <input
+          id="paymentNotes"
+          type="text"
+          class="form-input"
+          placeholder="e.g. UPI, Cash, Bank Transfer..."
+          [(ngModel)]="notes"
+          name="notes"
+        />
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" (click)="onClose()">
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="btn-primary"
+          [disabled]="amount <= 0 || isOverpayment() || isSubmitting()"
+        >
+          {{ isSubmitting() ? 'Recording...' : 'Record Payment' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

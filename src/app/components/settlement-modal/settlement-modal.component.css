@@ -1,0 +1,168 @@
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(0.5rem);
+  -webkit-backdrop-filter: blur(0.5rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+}
+
+.modal-dialog {
+  width: 100%;
+  max-width: 27rem;
+  background: var(--loop-bg-surface);
+  border: 0.0625rem solid var(--loop-border-subtle);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  box-shadow: var(--loop-shadow-lg);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-icon {
+  font-size: 1.5rem;
+  color: var(--loop-accent);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--loop-text-primary);
+}
+
+.sub-text {
+  font-size: 0.8125rem;
+  color: var(--loop-text-secondary);
+}
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--loop-text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.breakdown-card {
+  background: var(--loop-bg-surface-elevated);
+  border: 0.0625rem solid var(--loop-border-subtle);
+  border-radius: 1rem;
+  padding: 1rem 1.125rem;
+  margin-bottom: 1.25rem;
+}
+
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+  color: var(--loop-text-secondary);
+  padding: 0.25rem 0;
+}
+
+.text-owed {
+  color: var(--loop-owed);
+  font-weight: 600;
+}
+
+.text-owing {
+  color: var(--loop-owing);
+  font-weight: 600;
+}
+
+.net-summary {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 0.0625rem dashed var(--loop-border-subtle);
+  text-align: center;
+}
+
+.net-label {
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--loop-text-muted);
+}
+
+.net-amount {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0.25rem 0;
+}
+
+.net-direction {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--loop-text-secondary);
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.form-group label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--loop-text-secondary);
+}
+
+.form-input {
+  background: var(--loop-bg-surface-elevated);
+  border: 0.0625rem solid var(--loop-border-subtle);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: var(--loop-text-primary);
+  font-size: 0.9375rem;
+  outline: none;
+}
+
+.info-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--loop-text-muted);
+  line-height: 1.4;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background: var(--loop-bg-base);
+}
+
+.info-notice ion-icon {
+  font-size: 1.125rem;
+  flex-shrink: 0;
+  color: var(--loop-accent);
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
