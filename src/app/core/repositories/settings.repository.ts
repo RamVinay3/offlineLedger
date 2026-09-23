@@ -33,6 +33,8 @@ export class SettingsRepository {
       autoLockTimeout: (map.get('autoLockTimeout') as any) || DEFAULT_SETTINGS.autoLockTimeout,
       isBiometricEnabled: map.get('isBiometricEnabled') === 'true',
       hasCompletedOnboarding: map.get('hasCompletedOnboarding') === 'true',
+      upiId: map.get('upiId') || undefined,
+      userName: map.get('userName') || undefined,
     };
   }
 

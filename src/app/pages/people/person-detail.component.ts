@@ -13,6 +13,8 @@ import {
 import { FastEntryModalComponent } from '../../components/fast-entry-modal/fast-entry-modal.component';
 import { PaymentModalComponent } from '../../components/payment-modal/payment-modal.component';
 import { SettlementModalComponent } from '../../components/settlement-modal/settlement-modal.component';
+import { ShareModalComponent } from '../../components/share-modal/share-modal.component';
+import { UpiQrModalComponent } from '../../components/upi-qr-modal/upi-qr-modal.component';
 import { IonIcon } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
@@ -30,6 +32,9 @@ import {
   mailOutline,
   documentTextOutline,
   checkmarkDoneOutline,
+  shareSocialOutline,
+  qrCodeOutline,
+  chatbubbleEllipsesOutline,
 } from 'ionicons/icons';
 
 @Component({
@@ -42,6 +47,8 @@ import {
     FastEntryModalComponent,
     PaymentModalComponent,
     SettlementModalComponent,
+    ShareModalComponent,
+    UpiQrModalComponent,
   ],
   templateUrl: './person-detail.component.html',
   styleUrl: './person-detail.component.css',
@@ -56,6 +63,8 @@ export class PersonDetailComponent implements OnInit {
   fastEntryType = signal<ObligationType>('MONEY');
 
   selectedObligationForPayment = signal<ObligationWithDetails | null>(null);
+  selectedObligationForShare = signal<ObligationWithDetails | null>(null);
+  selectedObligationForQr = signal<ObligationWithDetails | null>(null);
   showSettlementModal = signal<boolean>(false);
 
   readonly currentPerson = computed(() => {
@@ -132,6 +141,9 @@ export class PersonDetailComponent implements OnInit {
       mailOutline,
       documentTextOutline,
       checkmarkDoneOutline,
+      shareSocialOutline,
+      qrCodeOutline,
+      chatbubbleEllipsesOutline,
     });
   }
 

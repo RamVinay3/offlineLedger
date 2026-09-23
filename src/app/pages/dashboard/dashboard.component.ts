@@ -6,6 +6,8 @@ import { LoopStateService, FilterCategory } from '../../core/state/loop-state.se
 import { ObligationWithDetails } from '../../core/models';
 import { FastEntryModalComponent } from '../../components/fast-entry-modal/fast-entry-modal.component';
 import { PaymentModalComponent } from '../../components/payment-modal/payment-modal.component';
+import { ShareModalComponent } from '../../components/share-modal/share-modal.component';
+import { UpiQrModalComponent } from '../../components/upi-qr-modal/upi-qr-modal.component';
 import { IonIcon } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
@@ -23,12 +25,22 @@ import {
   checkmarkDoneOutline,
   chevronForwardOutline,
   shieldCheckmarkOutline,
+  qrCodeOutline,
+  chatbubbleEllipsesOutline,
 } from 'ionicons/icons';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, IonIcon, FastEntryModalComponent, PaymentModalComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    IonIcon,
+    FastEntryModalComponent,
+    PaymentModalComponent,
+    ShareModalComponent,
+    UpiQrModalComponent,
+  ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })
@@ -36,6 +48,8 @@ export class DashboardComponent {
   Math = Math;
   showFastEntry = signal<boolean>(false);
   selectedObligationForPayment = signal<ObligationWithDetails | null>(null);
+  selectedObligationForShare = signal<ObligationWithDetails | null>(null);
+  selectedObligationForQr = signal<ObligationWithDetails | null>(null);
 
   readonly filters: { key: FilterCategory; label: string }[] = [
     { key: 'ALL', label: 'All' },
@@ -66,6 +80,8 @@ export class DashboardComponent {
       checkmarkDoneOutline,
       chevronForwardOutline,
       shieldCheckmarkOutline,
+      qrCodeOutline,
+      chatbubbleEllipsesOutline,
     });
   }
 

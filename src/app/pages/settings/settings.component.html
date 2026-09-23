@@ -216,6 +216,22 @@
         </select>
       </div>
 
+      <!-- UPI ID Setting for Instant Payment QR -->
+      <div class="setting-item">
+        <div class="setting-text">
+          <span class="setting-title">Your UPI ID (VPA)</span>
+          <span class="setting-desc">For generating instant offline payment QR codes</span>
+        </div>
+        <input
+          type="text"
+          class="form-input font-mono"
+          style="max-width: 14rem; text-align: right;"
+          placeholder="e.g. name@upi"
+          [value]="state.settings().upiId || ''"
+          (change)="updateUpiId($event)"
+        />
+      </div>
+
       <div class="setting-item">
         <div class="setting-text">
           <span class="setting-title">Visual Theme</span>

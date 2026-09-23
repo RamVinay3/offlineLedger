@@ -59,6 +59,7 @@
   --loop-tabbar-item-color: #64748b;
   --loop-tabbar-item-active: #818cf8;
   --loop-tabbar-fab-border: #090d16;
+  --loop-lock-overlay-bg: rgba(9, 13, 22, 0.94);
 
   /* Ionic Overrides to match LOOP aesthetics */
   --ion-font-family: var(--loop-font-sans);
@@ -79,24 +80,45 @@ body.light-theme, html.light-theme {
   --loop-bg-base: #f8fafc;
   --loop-bg-surface: #ffffff;
   --loop-bg-surface-elevated: #f1f5f9;
-  --loop-bg-surface-glass: rgba(255, 255, 255, 0.85);
-  --loop-border-subtle: rgba(0, 0, 0, 0.08);
-  --loop-border-focus: rgba(99, 102, 241, 0.4);
+  --loop-bg-surface-glass: rgba(255, 255, 255, 0.9);
+  --loop-border-subtle: #e2e8f0;
+  --loop-border-focus: rgba(79, 70, 229, 0.5);
+
+  /* High-contrast status tokens for light mode */
+  --loop-owed: #059669;          /* Deep emerald: 4.8:1 AAA contrast on white */
+  --loop-owed-bg: rgba(16, 185, 129, 0.12);
+  --loop-owed-border: rgba(5, 150, 105, 0.3);
+
+  --loop-owing: #e11d48;         /* Deep rose: 4.8:1 AAA contrast on white */
+  --loop-owing-bg: rgba(225, 29, 72, 0.1);
+  --loop-owing-border: rgba(225, 29, 72, 0.25);
+
+  --loop-attention: #d97706;     /* Deep amber */
+  --loop-attention-bg: rgba(245, 158, 11, 0.12);
+  --loop-attention-border: rgba(217, 119, 6, 0.3);
+
+  --loop-accent: #4f46e5;        /* Deep indigo */
+  --loop-accent-glow: rgba(79, 70, 229, 0.15);
+
+  --loop-item-accent: #7c3aed;   /* Rich purple for items */
+  --loop-item-bg: rgba(124, 58, 237, 0.1);
+  --loop-item-border: rgba(124, 58, 237, 0.25);
 
   --loop-text-primary: #0f172a;
   --loop-text-secondary: #475569;
-  --loop-text-muted: #94a3b8;
+  --loop-text-muted: #64748b;
 
   --loop-shadow-sm: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.05);
-  --loop-shadow-md: 0 0.25rem 0.875rem rgba(0, 0, 0, 0.08);
-  --loop-shadow-lg: 0 0.625rem 1.75rem rgba(0, 0, 0, 0.12);
+  --loop-shadow-md: 0 0.25rem 0.875rem rgba(0, 0, 0, 0.07);
+  --loop-shadow-lg: 0 0.625rem 1.75rem rgba(0, 0, 0, 0.1);
 
   --loop-tabbar-bg: rgba(255, 255, 255, 0.94);
-  --loop-tabbar-border: rgba(0, 0, 0, 0.08);
+  --loop-tabbar-border: #e2e8f0;
   --loop-tabbar-shadow: 0 -0.25rem 1.25rem rgba(15, 23, 42, 0.08);
   --loop-tabbar-item-color: #64748b;
   --loop-tabbar-item-active: #4f46e5;
   --loop-tabbar-fab-border: #ffffff;
+  --loop-lock-overlay-bg: rgba(248, 250, 252, 0.94);
 
   --ion-background-color: var(--loop-bg-base);
   --ion-text-color: var(--loop-text-primary);

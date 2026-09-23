@@ -7,7 +7,24 @@ import { ReminderType } from '../models';
   providedIn: 'root',
 })
 export class NotificationService {
-  constructor(private reminderRepo: ReminderRepository) {}
+  constructor(private reminderRepo: ReminderRepository) {
+    this.createNotificationChannel();
+  }
+
+  async createNotificationChannel(): Promise<void> {
+    try {
+      await LocalNotifications.createChannel({
+        id: 'loop-due-reminders',
+        name: 'LOOP Due Date Reminders',
+        description: 'Notifications for upcoming and overdue loans, items, and commitments',
+        importance: 4,
+        visibility: 1,
+        vibration: true,
+      });
+    } catch {
+      // Web or non-Android platform
+    }
+  }
 
   async requestPermissions(): Promise<boolean> {
     try {
@@ -104,6 +121,7 @@ export class NotificationService {
             schedule: { at: params.scheduleAt },
             sound: 'beep.wav',
             smallIcon: 'ic_stat_icon_config_sample',
+            channelId: 'loop-due-reminders',
           },
         ],
       });

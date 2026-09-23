@@ -40,7 +40,8 @@
             "scripts": [],
             "browser": "src/main.ts",
             "allowedCommonJsDependencies": [
-              "sql.js"
+              "sql.js",
+              "qrcode"
             ]
           },
           "configurations": {

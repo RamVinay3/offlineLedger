@@ -209,11 +209,22 @@
                     }
                   </div>
 
-                  @if (ob.status !== 'COMPLETED') {
-                    <button class="btn-primary action-btn-sm" (click)="openPaymentModal(ob)">
-                      Record Payment
-                    </button>
-                  }
+                  <div class="card-action-btns">
+                    @if (ob.status !== 'COMPLETED' && ob.direction === 'LENT') {
+                      <button class="tool-circle-btn qr-btn" (click)="selectedObligationForQr.set(ob)" title="Show Payment QR">
+                        <ion-icon name="qr-code-outline"></ion-icon>
+                      </button>
+                      <button class="tool-circle-btn chat-btn" (click)="selectedObligationForShare.set(ob)" title="Send Friendly Reminder">
+                        <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+                      </button>
+                    }
+                    @if (ob.status !== 'COMPLETED') {
+                      <button class="btn-action-primary" (click)="openPaymentModal(ob)">
+                        <ion-icon name="cash-outline"></ion-icon>
+                        <span>Record Payment</span>
+                      </button>
+                    }
+                  </div>
                 </div>
               </div>
             }
@@ -264,11 +275,19 @@
                     }
                   </div>
 
-                  @if (item.status !== 'COMPLETED') {
-                    <button class="btn-primary action-btn-sm" (click)="returnItem(item)">
-                      Mark as Returned
-                    </button>
-                  }
+                  <div class="card-action-btns">
+                    @if (item.status !== 'COMPLETED' && item.direction === 'LENT') {
+                      <button class="tool-circle-btn chat-btn" (click)="selectedObligationForShare.set(item)" title="Send Reminder">
+                        <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+                      </button>
+                    }
+                    @if (item.status !== 'COMPLETED') {
+                      <button class="btn-action-returned" (click)="returnItem(item)">
+                        <ion-icon name="checkmark-done-outline"></ion-icon>
+                        <span>Mark Returned</span>
+                      </button>
+                    }
+                  </div>
                 </div>
               </div>
             }
@@ -312,11 +331,19 @@
                     }
                   </div>
 
-                  @if (c.status !== 'COMPLETED') {
-                    <button class="btn-primary action-btn-sm" (click)="completeCommitment(c)">
-                      Mark as Done
-                    </button>
-                  }
+                  <div class="card-action-btns">
+                    @if (c.status !== 'COMPLETED' && c.direction === 'LENT') {
+                      <button class="tool-circle-btn chat-btn" (click)="selectedObligationForShare.set(c)" title="Send Reminder">
+                        <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+                      </button>
+                    }
+                    @if (c.status !== 'COMPLETED') {
+                      <button class="btn-action-done" (click)="completeCommitment(c)">
+                        <ion-icon name="checkmark-circle-outline"></ion-icon>
+                        <span>Mark Done</span>
+                      </button>
+                    }
+                  </div>
                 </div>
               </div>
             }
@@ -379,5 +406,25 @@
       (settled)="onSettled()"
       (closed)="showSettlementModal.set(false)"
     ></app-settlement-modal>
+  }
+
+  <!-- Share Friendly Reminder Modal -->
+  @if (selectedObligationForShare()) {
+    <app-share-modal
+      [obligation]="selectedObligationForShare()!"
+      [person]="currentPerson()"
+      (closed)="selectedObligationForShare.set(null)"
+    ></app-share-modal>
+  }
+
+  <!-- UPI QR Payment Modal -->
+  @if (selectedObligationForQr()) {
+    <app-upi-qr-modal
+      [obligation]="selectedObligationForQr()!"
+      [upiId]="state.settings().upiId || ''"
+      [userName]="state.settings().userName || ''"
+      (closed)="selectedObligationForQr.set(null)"
+      (upiIdSaved)="state.updateSettings({ upiId: $event })"
+    ></app-upi-qr-modal>
   }
 </div>

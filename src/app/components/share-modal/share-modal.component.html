@@ -1,0 +1,73 @@
+<div class="modal-backdrop animate-fade-in" (click)="close()">
+  <div class="modal-card glass-panel" (click)="$event.stopPropagation()">
+    <!-- Header -->
+    <div class="modal-header">
+      <div class="header-icon-wrap">
+        <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+      </div>
+      <div>
+        <h2 class="modal-title">Send Friendly Reminder</h2>
+        <p class="modal-subtitle">Polite, non-awkward message for {{ obligation.personName }}</p>
+      </div>
+      <button class="close-btn" (click)="close()" title="Close">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+
+    <!-- Tone Selector -->
+    <div class="tone-selector">
+      <button
+        class="tone-btn"
+        [class.active]="selectedTone() === 'FRIENDLY'"
+        (click)="setTone('FRIENDLY')"
+      >
+        🌟 Friendly
+      </button>
+      <button
+        class="tone-btn"
+        [class.active]="selectedTone() === 'SHORT'"
+        (click)="setTone('SHORT')"
+      >
+        ⚡ Short
+      </button>
+      <button
+        class="tone-btn"
+        [class.active]="selectedTone() === 'POLITE'"
+        (click)="setTone('POLITE')"
+      >
+        🙏 Polite
+      </button>
+    </div>
+
+    <!-- Message Preview & Edit -->
+    <div class="message-box">
+      <textarea
+        class="form-input message-textarea"
+        rows="4"
+        [ngModel]="messageText()"
+        (ngModelChange)="messageText.set($event)"
+      ></textarea>
+      @if (person?.phoneNumber) {
+        <span class="phone-hint">📱 Sending to: {{ person.phoneNumber }}</span>
+      }
+    </div>
+
+    <!-- Send Actions -->
+    <div class="actions-grid">
+      <button class="btn-whatsapp" (click)="openWhatsApp()">
+        <ion-icon name="logo-whatsapp"></ion-icon>
+        <span>Send on WhatsApp</span>
+      </button>
+
+      <button class="btn-secondary action-btn" (click)="openSms()">
+        <ion-icon name="send-outline"></ion-icon>
+        <span>SMS</span>
+      </button>
+
+      <button class="btn-secondary action-btn" (click)="copyText()">
+        <ion-icon [name]="copied() ? 'checkmark-outline' : 'copy-outline'"></ion-icon>
+        <span>{{ copied() ? 'Copied!' : 'Copy' }}</span>
+      </button>
+    </div>
+  </div>
+</div>

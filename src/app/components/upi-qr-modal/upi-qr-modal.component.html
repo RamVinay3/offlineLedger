@@ -1,0 +1,81 @@
+<div class="modal-backdrop animate-fade-in" (click)="close()">
+  <div class="modal-card glass-panel" (click)="$event.stopPropagation()">
+    <!-- Header -->
+    <div class="modal-header">
+      <div class="header-icon-wrap">
+        <ion-icon name="qr-code-outline"></ion-icon>
+      </div>
+      <div>
+        <h2 class="modal-title">UPI Payment QR</h2>
+        <p class="modal-subtitle">Scan with Google Pay, PhonePe, Paytm, or BHIM</p>
+      </div>
+      <button class="close-btn" (click)="close()" title="Close">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+
+    <!-- Amount Hero -->
+    <div class="amount-hero">
+      <span class="amount-label">Amount to Pay</span>
+      <span class="amount-val font-mono">
+        {{ obligation.currency }}{{ obligation.remainingAmount.toLocaleString() }}
+      </span>
+      <span class="for-label">for "{{ obligation.title }}"</span>
+    </div>
+
+    <!-- UPI ID Configuration or Display -->
+    @if (editingUpi()) {
+      <div class="upi-config-box">
+        <label class="config-label">Enter Your UPI ID (VPA):</label>
+        <div class="input-row">
+          <input
+            type="text"
+            class="form-input upi-input font-mono"
+            placeholder="e.g. name@okhdfcbank or 9876543210@paytm"
+            [ngModel]="tempUpiId()"
+            (ngModelChange)="tempUpiId.set($event)"
+          />
+          <button
+            class="btn-primary save-upi-btn"
+            (click)="saveUpiId()"
+            [disabled]="!tempUpiId().trim()"
+          >
+            Save & Generate
+          </button>
+        </div>
+      </div>
+    } @else {
+      <!-- QR Container -->
+      <div class="qr-container">
+        @if (qrDataUrl()) {
+          <div class="qr-wrapper">
+            <img [src]="qrDataUrl()" alt="UPI Payment QR Code" class="qr-img" />
+          </div>
+        } @else {
+          <div class="qr-placeholder">Generating offline QR...</div>
+        }
+
+        <div class="upi-badge-row">
+          <span class="upi-id font-mono">{{ upiId }}</span>
+          <button class="edit-link" (click)="editingUpi.set(true)" title="Change UPI ID">
+            <ion-icon name="create-outline"></ion-icon>
+            <span>Change</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="actions-row">
+        <button class="btn-primary copy-btn" (click)="copyLink()">
+          <ion-icon [name]="copied() ? 'checkmark-outline' : 'copy-outline'"></ion-icon>
+          <span>{{ copied() ? 'Payment Link Copied!' : 'Copy UPI Link' }}</span>
+        </button>
+      </div>
+    }
+
+    <div class="offline-badge">
+      <ion-icon name="shield-checkmark-outline"></ion-icon>
+      <span>100% Offline QR Generation • No external API</span>
+    </div>
+  </div>
+</div>

@@ -267,26 +267,50 @@
                 </div>
 
                 <div class="footer-actions" (click)="$event.stopPropagation()">
+                  <!-- Quick Tool Circular Buttons (QR & Reminder) -->
+                  @if (ob.status !== 'COMPLETED' && ob.direction === 'LENT') {
+                    @if (ob.type === 'MONEY') {
+                      <button
+                        class="tool-circle-btn qr-btn"
+                        (click)="selectedObligationForQr.set(ob)"
+                        title="Show Payment QR"
+                      >
+                        <ion-icon name="qr-code-outline"></ion-icon>
+                      </button>
+                    }
+                    <button
+                      class="tool-circle-btn chat-btn"
+                      (click)="selectedObligationForShare.set(ob)"
+                      title="Send Friendly Reminder"
+                    >
+                      <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+                    </button>
+                  }
+
+                  <!-- Primary Action Button with Rich Styling -->
                   @if (ob.type === 'MONEY' && ob.status !== 'COMPLETED') {
                     <button
-                      class="action-pill-btn"
+                      class="btn-action-primary"
                       (click)="openPaymentModal(ob)"
                     >
-                      Record Payment
+                      <ion-icon name="cash-outline"></ion-icon>
+                      <span>Record Payment</span>
                     </button>
                   } @else if (ob.type === 'ITEM' && ob.status !== 'COMPLETED') {
                     <button
-                      class="action-pill-btn"
+                      class="btn-action-returned"
                       (click)="returnItem(ob)"
                     >
-                      Mark Returned
+                      <ion-icon name="checkmark-done-outline"></ion-icon>
+                      <span>Mark Returned</span>
                     </button>
                   } @else if (ob.type === 'COMMITMENT' && ob.status !== 'COMPLETED') {
                     <button
-                      class="action-pill-btn"
+                      class="btn-action-done"
                       (click)="completeCommitment(ob)"
                     >
-                      Done
+                      <ion-icon name="checkmark-circle-outline"></ion-icon>
+                      <span>Done</span>
                     </button>
                   }
                 </div>
@@ -313,5 +337,24 @@
       (paymentRecorded)="onPaymentRecorded()"
       (closed)="selectedObligationForPayment.set(null)"
     ></app-payment-modal>
+  }
+
+  <!-- Share Friendly Reminder Modal -->
+  @if (selectedObligationForShare()) {
+    <app-share-modal
+      [obligation]="selectedObligationForShare()!"
+      (closed)="selectedObligationForShare.set(null)"
+    ></app-share-modal>
+  }
+
+  <!-- UPI QR Payment Modal -->
+  @if (selectedObligationForQr()) {
+    <app-upi-qr-modal
+      [obligation]="selectedObligationForQr()!"
+      [upiId]="state.settings().upiId || ''"
+      [userName]="state.settings().userName || ''"
+      (closed)="selectedObligationForQr.set(null)"
+      (upiIdSaved)="state.updateSettings({ upiId: $event })"
+    ></app-upi-qr-modal>
   }
 </div>

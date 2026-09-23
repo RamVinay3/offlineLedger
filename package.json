@@ -26,7 +26,9 @@
     "@capacitor/local-notifications": "^8.3.1",
     "@capacitor/status-bar": "8.0.3",
     "@ionic/angular": "^9.0.0",
+    "@types/qrcode": "^1.5.6",
     "ionicons": "^8.1.0",
+    "qrcode": "^1.5.4",
     "rxjs": "~7.8.0",
     "sql.js": "^1.14.2",
     "tslib": "^2.3.0"

@@ -134,6 +134,8 @@ export interface AppSettings {
   autoLockTimeout: 'immediately' | '1m' | '5m' | '15m' | 'never';
   isBiometricEnabled: boolean;
   hasCompletedOnboarding: boolean;
+  upiId?: string;
+  userName?: string;
 }
 
 export interface ObligationWithDetails extends Obligation {

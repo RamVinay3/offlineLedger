@@ -170,6 +170,13 @@ export class SettingsComponent {
     this.showStatus(`Default currency updated to ${symbol}`);
   }
 
+  async updateUpiId(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const clean = input.value.trim();
+    await this.state.updateSettings({ upiId: clean });
+    this.showStatus(clean ? `UPI ID saved: ${clean}` : 'UPI ID cleared.');
+  }
+
   async setTheme(theme: 'dark' | 'light' | 'system'): Promise<void> {
     try {
       this.state.applyTheme(theme);
