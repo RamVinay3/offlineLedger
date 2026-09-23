@@ -1,4 +1,4 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, input, output, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LoopStateService } from '../../core/state/loop-state.service';
@@ -18,6 +18,11 @@ export class SettlementModalComponent {
   readonly balance = input.required<PersonBalanceSummary>();
   readonly settled = output<void>();
   readonly closed = output<void>();
+
+  readonly isMutualSettlement = computed<boolean>(() => {
+    const b = this.balance();
+    return b.totalOwedToYou > 0 && b.totalYouOwe > 0;
+  });
 
   notes = '';
   isSubmitting = signal<boolean>(false);
@@ -48,6 +53,13 @@ export class SettlementModalComponent {
     } finally {
       this.isSubmitting.set(false);
     }
+  }
+
+  autoGrow(event: Event): void {
+    const el = event.target as HTMLTextAreaElement;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 180)}px`;
   }
 
   onClose(): void {

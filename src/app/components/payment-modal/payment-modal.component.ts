@@ -57,6 +57,13 @@ export class PaymentModalComponent {
     }
   }
 
+  autoGrow(event: Event): void {
+    const el = event.target as HTMLTextAreaElement;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 180)}px`;
+  }
+
   onClose(): void {
     this.closed.emit();
   }

@@ -170,13 +170,13 @@
             <h3>No completed obligations</h3>
             <p>Settled debts, returned items, and fulfilled commitments will appear in this history.</p>
           } @else {
-            <h3>Nothing owed yet</h3>
+            <h3>No Active Obligations</h3>
             <p>
-              When you lend money, lend an item, or create an obligation, it will appear here.
+              All tabs, loans, and items are settled. Tap below to record a new loan or obligation.
             </p>
             <button class="btn-primary" (click)="showFastEntry.set(true)">
               <ion-icon name="add-outline"></ion-icon>
-              Add Your First Obligation
+              Add Active Obligation
             </button>
           }
         </div>
@@ -267,7 +267,7 @@
                 </div>
 
                 <div class="footer-actions" (click)="$event.stopPropagation()">
-                  <!-- Quick Tool Circular Buttons (QR & Reminder) -->
+                  <!-- Quick Tool Circular Buttons (QR, Call & Reminder) -->
                   @if (ob.status !== 'COMPLETED' && ob.direction === 'LENT') {
                     @if (ob.type === 'MONEY') {
                       <button
@@ -343,6 +343,7 @@
   @if (selectedObligationForShare()) {
     <app-share-modal
       [obligation]="selectedObligationForShare()!"
+      [person]="getPerson(selectedObligationForShare()!.personId)"
       (closed)="selectedObligationForShare.set(null)"
     ></app-share-modal>
   }

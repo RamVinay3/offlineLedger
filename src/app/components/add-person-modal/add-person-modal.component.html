@@ -2,8 +2,8 @@
   <div class="modal-dialog card-container" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <div class="title-wrap">
-        <ion-icon name="person-add-outline" class="header-icon"></ion-icon>
-        <h2>Add Person</h2>
+        <ion-icon [name]="personToEdit() ? 'create-outline' : 'person-add-outline'" class="header-icon"></ion-icon>
+        <h2>{{ personToEdit() ? 'Update Person' : 'Add Person' }}</h2>
       </div>
       <button class="icon-btn" (click)="onClose()" title="Close">
         <ion-icon name="close-outline"></ion-icon>
@@ -87,7 +87,7 @@
           class="btn-primary"
           [disabled]="!name.trim() || isSubmitting()"
         >
-          {{ isSubmitting() ? 'Saving...' : 'Add Person' }}
+          {{ isSubmitting() ? 'Saving...' : (personToEdit() ? 'Update Person' : 'Add Person') }}
         </button>
       </div>
     </form>

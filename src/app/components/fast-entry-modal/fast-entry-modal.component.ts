@@ -1,4 +1,4 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, input, output, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LoopStateService } from '../../core/state/loop-state.service';
@@ -13,6 +13,7 @@ import {
   cubeOutline,
   checkboxOutline,
   personAddOutline,
+  lockClosedOutline,
 } from 'ionicons/icons';
 
 @Component({
@@ -22,8 +23,9 @@ import {
   templateUrl: './fast-entry-modal.component.html',
   styleUrl: './fast-entry-modal.component.css',
 })
-export class FastEntryModalComponent {
+export class FastEntryModalComponent implements OnInit {
   readonly initialPersonId = input<string | null>(null);
+  readonly lockPerson = input<boolean>(false);
   readonly initialDirection = input<ObligationDirection>('LENT');
   readonly initialType = input<ObligationType>('MONEY');
   readonly saved = output<void>();
@@ -36,12 +38,31 @@ export class FastEntryModalComponent {
   description = '';
   amount: number | null = null;
   dueDate = '';
+  selectedPreset = signal<number | null>(null);
 
   showAddPersonModal = signal<boolean>(false);
   isSubmitting = signal<boolean>(false);
 
+  readonly isPersonLocked = computed<boolean>(() => {
+    return this.lockPerson() || !!this.initialPersonId();
+  });
+
+  readonly lockedPerson = computed(() => {
+    const id = this.initialPersonId() || this.selectedPersonId;
+    if (!id) return null;
+    return this.state.people().find((p) => p.id === id) || null;
+  });
+
   constructor(public state: LoopStateService) {
-    addIcons({ closeOutline, flashOutline, cashOutline, cubeOutline, checkboxOutline, personAddOutline });
+    addIcons({
+      closeOutline,
+      flashOutline,
+      cashOutline,
+      cubeOutline,
+      checkboxOutline,
+      personAddOutline,
+      lockClosedOutline,
+    });
   }
 
   ngOnInit(): void {
@@ -64,10 +85,44 @@ export class FastEntryModalComponent {
     this.entryType.set(t);
   }
 
+  autoGrow(event: Event): void {
+    const el = event.target as HTMLTextAreaElement;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 180)}px`;
+  }
+
   setDuePreset(days: number): void {
+    if (this.selectedPreset() === days) {
+      this.clearDueDate();
+      return;
+    }
     const d = new Date();
     d.setDate(d.getDate() + days);
     this.dueDate = d.toISOString().substring(0, 10);
+    this.selectedPreset.set(days);
+  }
+
+  clearDueDate(): void {
+    this.dueDate = '';
+    this.selectedPreset.set(null);
+  }
+
+  onDateInputChange(): void {
+    if (!this.dueDate) {
+      this.selectedPreset.set(null);
+      return;
+    }
+    const due = new Date(this.dueDate + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffTime = due.getTime() - today.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays === 3 || diffDays === 7 || diffDays === 30) {
+      this.selectedPreset.set(diffDays);
+    } else {
+      this.selectedPreset.set(null);
+    }
   }
 
   getDueDateStatus(): { isPast: boolean; label: string } | null {
@@ -90,10 +145,30 @@ export class FastEntryModalComponent {
         isPast: false,
         label: 'Due today',
       };
+    } else if (diffDays === 1) {
+      return {
+        isPast: false,
+        label: 'Due tomorrow (in 1 day)',
+      };
+    } else if (diffDays === 7) {
+      return {
+        isPast: false,
+        label: 'Due in 1 week (7 days)',
+      };
+    } else if (diffDays === 14) {
+      return {
+        isPast: false,
+        label: 'Due in 2 weeks (14 days)',
+      };
+    } else if (diffDays === 30 || diffDays === 31) {
+      return {
+        isPast: false,
+        label: 'Due in 1 month (30 days)',
+      };
     } else {
       return {
         isPast: false,
-        label: `Due in ${diffDays} day${diffDays > 1 ? 's' : ''}`,
+        label: `Due in ${diffDays} days`,
       };
     }
   }
@@ -111,7 +186,10 @@ export class FastEntryModalComponent {
   }
 
   onNewPersonCreated(person: Person): void {
-    this.selectedPersonId = person.id;
+    // Only auto-assign if person is not locked to a specific profile
+    if (!this.lockPerson()) {
+      this.selectedPersonId = person.id;
+    }
     this.showAddPersonModal.set(false);
   }
 

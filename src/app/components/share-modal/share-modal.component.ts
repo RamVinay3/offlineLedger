@@ -1,7 +1,8 @@
-import { Component, Input, Output, EventEmitter, OnInit, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ObligationWithDetails, Person } from '../../core/models';
+import { LoopStateService } from '../../core/state/loop-state.service';
 import { IonIcon } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
@@ -11,6 +12,7 @@ import {
   copyOutline,
   checkmarkOutline,
   sendOutline,
+  callOutline,
 } from 'ionicons/icons';
 
 @Component({
@@ -29,7 +31,15 @@ export class ShareModalComponent implements OnInit {
   messageText = signal<string>('');
   copied = signal<boolean>(false);
 
-  constructor() {
+  readonly activePerson = computed<Person | null>(() => {
+    if (this.person) return this.person;
+    if (this.obligation?.personId) {
+      return this.state.people().find((p) => p.id === this.obligation.personId) || null;
+    }
+    return null;
+  });
+
+  constructor(private state: LoopStateService) {
     addIcons({
       closeOutline,
       logoWhatsapp,
@@ -37,6 +47,7 @@ export class ShareModalComponent implements OnInit {
       copyOutline,
       checkmarkOutline,
       sendOutline,
+      callOutline,
     });
   }
 
@@ -94,11 +105,12 @@ export class ShareModalComponent implements OnInit {
 
   openWhatsApp(): void {
     const text = encodeURIComponent(this.messageText());
-    const phone = this.person?.phoneNumber ? this.person.phoneNumber.replace(/\D/g, '') : '';
+    const rawPhone = this.activePerson()?.phoneNumber?.trim() || '';
+    const phone = rawPhone.replace(/\D/g, '');
     let url = `https://wa.me/?text=${text}`;
-    if (phone && phone.length === 10) {
+    if (phone.length === 10) {
       url = `https://wa.me/91${phone}?text=${text}`;
-    } else if (phone && phone.length > 10) {
+    } else if (phone.length > 10) {
       url = `https://wa.me/${phone}?text=${text}`;
     }
     window.open(url, '_blank');
@@ -106,9 +118,19 @@ export class ShareModalComponent implements OnInit {
 
   openSms(): void {
     const text = encodeURIComponent(this.messageText());
-    const phone = this.person?.phoneNumber ? this.person.phoneNumber.replace(/\D/g, '') : '';
-    const url = phone ? `sms:${phone}?body=${text}` : `sms:?body=${text}`;
+    const rawPhone = this.activePerson()?.phoneNumber?.trim() || '';
+    const phone = rawPhone.replace(/\D/g, '');
+    const isApple = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const separator = isApple ? '&' : '?';
+    const url = phone ? `sms:${phone}${separator}body=${text}` : `sms:?body=${text}`;
     window.location.href = url;
+  }
+
+  callPerson(): void {
+    const rawPhone = this.activePerson()?.phoneNumber?.trim() || '';
+    if (rawPhone) {
+      window.location.href = `tel:${rawPhone}`;
+    }
   }
 
   async copyText(): Promise<void> {

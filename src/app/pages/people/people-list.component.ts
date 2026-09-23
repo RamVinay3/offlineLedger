@@ -15,6 +15,8 @@ import {
   cubeOutline,
   checkmarkCircleOutline,
   alertCircle,
+  createOutline,
+  callOutline,
 } from 'ionicons/icons';
 
 @Component({
@@ -28,6 +30,8 @@ export class PeopleListComponent {
   Math = Math;
   searchQuery = '';
   showAddModal = signal<boolean>(false);
+  selectedPersonForEdit = signal<Person | null>(null);
+  showEditModal = signal<boolean>(false);
 
   readonly filteredPeople = computed<PersonBalanceSummary[]>(() => {
     const list = this.state.personBalances();
@@ -48,11 +52,28 @@ export class PeopleListComponent {
       cubeOutline,
       checkmarkCircleOutline,
       alertCircle,
+      createOutline,
+      callOutline,
     });
+  }
+
+  getPersonPhone(personId: string): string | undefined {
+    return this.state.people().find((p) => p.id === personId)?.phoneNumber;
   }
 
   openPerson(personId: string): void {
     this.router.navigate(['/people', personId], { state: { from: '/tabs/people' } });
+  }
+
+  openEditModal(personId: string, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    const person = this.state.people().find((p) => p.id === personId) || null;
+    if (person) {
+      this.selectedPersonForEdit.set(person);
+      this.showEditModal.set(true);
+    }
   }
 
   onPersonCreated(person: Person): void {

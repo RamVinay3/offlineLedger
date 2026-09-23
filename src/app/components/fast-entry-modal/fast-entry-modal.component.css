@@ -196,6 +196,8 @@
 }
 
 .form-input {
+  width: 100%;
+  box-sizing: border-box;
   background: var(--loop-bg-surface-elevated);
   border: 0.0625rem solid var(--loop-border-subtle);
   border-radius: 0.75rem;
@@ -203,6 +205,24 @@
   color: var(--loop-text-primary);
   font-size: 0.9375rem;
   outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-input:focus {
+  border-color: var(--loop-accent);
+  box-shadow: 0 0 0 0.125rem rgba(99, 102, 241, 0.2);
+}
+
+.form-textarea {
+  min-height: 2.75rem;
+  max-height: 10rem;
+  resize: none;
+  overflow-y: auto;
+  line-height: 1.45;
+  font-family: inherit;
+  field-sizing: content;
+  word-break: break-word;
 }
 
 .form-select {
@@ -216,10 +236,75 @@
   color: var(--loop-text-primary);
 }
 
+/* Locked Person Display */
+.locked-person-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--loop-bg-surface-elevated);
+  border: 0.0625rem solid var(--loop-border-subtle);
+  border-radius: 0.75rem;
+  padding: 0.625rem 0.875rem;
+}
+
+.locked-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  color: #ffffff;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.locked-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.locked-name {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--loop-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.locked-sub {
+  font-size: 0.75rem;
+  color: var(--loop-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.locked-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--loop-accent);
+  border: 0.0625rem solid rgba(99, 102, 241, 0.25);
+  border-radius: 9999px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* Date Presets & Date Input */
 .date-presets {
   display: flex;
   gap: 0.375rem;
   margin-bottom: 0.375rem;
+  flex-wrap: wrap;
 }
 
 .preset-btn {
@@ -227,15 +312,47 @@
   border: 0.0625rem solid var(--loop-border-subtle);
   color: var(--loop-text-secondary);
   border-radius: 9999px;
-  padding: 0.25rem 0.625rem;
-  font-size: 0.6875rem;
+  padding: 0.3125rem 0.75rem;
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .preset-btn:hover {
-  background: var(--loop-accent);
-  color: #ffffff;
+  border-color: var(--loop-accent);
+  color: var(--loop-text-primary);
+}
+
+.preset-btn.active {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+  border-color: #4f46e5 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0.125rem 0.5rem rgba(79, 70, 229, 0.35);
+  font-weight: 700;
+}
+
+.preset-btn.clear-btn {
+  color: var(--loop-text-muted);
+  border-style: dashed;
+}
+
+.preset-btn.clear-btn:hover {
+  border-color: var(--loop-owing);
+  color: var(--loop-owing);
+}
+
+.date-input-wrap {
+  width: 100%;
+}
+
+.date-input {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  color-scheme: dark;
+  cursor: pointer;
 }
 
 .modal-actions {

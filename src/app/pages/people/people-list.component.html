@@ -105,4 +105,12 @@
       (closed)="showAddModal.set(false)"
     ></app-add-person-modal>
   }
+
+  <!-- Edit Person Modal -->
+  @if (showEditModal() && selectedPersonForEdit()) {
+    <app-add-person-modal
+      [personToEdit]="selectedPersonForEdit()"
+      (closed)="showEditModal.set(false); selectedPersonForEdit.set(null)"
+    ></app-add-person-modal>
+  }
 </div>

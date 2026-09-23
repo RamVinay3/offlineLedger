@@ -47,24 +47,34 @@
         [ngModel]="messageText()"
         (ngModelChange)="messageText.set($event)"
       ></textarea>
-      @if (person?.phoneNumber) {
-        <span class="phone-hint">📱 Sending to: {{ person.phoneNumber }}</span>
+      @if (activePerson()?.phoneNumber) {
+        <div class="target-phone-pill">
+          <ion-icon name="call-outline"></ion-icon>
+          <span>Direct to: <strong>{{ activePerson()!.phoneNumber }}</strong></span>
+        </div>
       }
     </div>
 
     <!-- Send Actions -->
-    <div class="actions-grid">
-      <button class="btn-whatsapp" (click)="openWhatsApp()">
+    <div class="actions-grid" [class.has-phone]="!!activePerson()?.phoneNumber">
+      <button class="btn-whatsapp action-btn" (click)="openWhatsApp()" title="Open WhatsApp chat directly">
         <ion-icon name="logo-whatsapp"></ion-icon>
-        <span>Send on WhatsApp</span>
+        <span>WhatsApp</span>
       </button>
 
-      <button class="btn-secondary action-btn" (click)="openSms()">
+      @if (activePerson()?.phoneNumber) {
+        <button class="btn-call action-btn" (click)="callPerson()" title="Call {{ activePerson()!.name }}">
+          <ion-icon name="call-outline"></ion-icon>
+          <span>Call</span>
+        </button>
+      }
+
+      <button class="btn-sms action-btn" (click)="openSms()" title="Open SMS directly">
         <ion-icon name="send-outline"></ion-icon>
         <span>SMS</span>
       </button>
 
-      <button class="btn-secondary action-btn" (click)="copyText()">
+      <button class="btn-copy action-btn" (click)="copyText()" title="Copy text to clipboard">
         <ion-icon [name]="copied() ? 'checkmark-outline' : 'copy-outline'"></ion-icon>
         <span>{{ copied() ? 'Copied!' : 'Copy' }}</span>
       </button>

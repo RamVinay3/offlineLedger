@@ -15,6 +15,7 @@ import { PaymentModalComponent } from '../../components/payment-modal/payment-mo
 import { SettlementModalComponent } from '../../components/settlement-modal/settlement-modal.component';
 import { ShareModalComponent } from '../../components/share-modal/share-modal.component';
 import { UpiQrModalComponent } from '../../components/upi-qr-modal/upi-qr-modal.component';
+import { AddPersonModalComponent } from '../../components/add-person-modal/add-person-modal.component';
 import { IonIcon } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
@@ -35,6 +36,8 @@ import {
   shareSocialOutline,
   qrCodeOutline,
   chatbubbleEllipsesOutline,
+  createOutline,
+  logoWhatsapp,
 } from 'ionicons/icons';
 
 @Component({
@@ -49,6 +52,7 @@ import {
     SettlementModalComponent,
     ShareModalComponent,
     UpiQrModalComponent,
+    AddPersonModalComponent,
   ],
   templateUrl: './person-detail.component.html',
   styleUrl: './person-detail.component.css',
@@ -66,6 +70,7 @@ export class PersonDetailComponent implements OnInit {
   selectedObligationForShare = signal<ObligationWithDetails | null>(null);
   selectedObligationForQr = signal<ObligationWithDetails | null>(null);
   showSettlementModal = signal<boolean>(false);
+  showEditPersonModal = signal<boolean>(false);
 
   readonly currentPerson = computed(() => {
     const id = this.personId();
@@ -75,6 +80,11 @@ export class PersonDetailComponent implements OnInit {
   readonly currentBalance = computed<PersonBalanceSummary | null>(() => {
     const id = this.personId();
     return this.state.personBalances().find((b) => b.personId === id) || null;
+  });
+
+  readonly hasMutualDebts = computed<boolean>(() => {
+    const b = this.currentBalance();
+    return !!b && b.totalOwedToYou > 0 && b.totalYouOwe > 0;
   });
 
   readonly personObligations = computed<ObligationWithDetails[]>(() => {
@@ -91,6 +101,10 @@ export class PersonDetailComponent implements OnInit {
         if (aActive !== bActive) return aActive - bActive;
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
+  });
+
+  readonly activeMoneyObligationsCount = computed<number>(() => {
+    return this.moneyObligations().filter((o) => o.status !== 'COMPLETED' && o.status !== 'CANCELLED').length;
   });
 
   readonly itemObligations = computed<ObligationWithDetails[]>(() => {
@@ -144,7 +158,23 @@ export class PersonDetailComponent implements OnInit {
       shareSocialOutline,
       qrCodeOutline,
       chatbubbleEllipsesOutline,
+      createOutline,
+      logoWhatsapp,
     });
+  }
+
+  getWhatsAppUrl(phoneNumber?: string): string {
+    if (!phoneNumber) return 'https://wa.me/';
+    const digits = phoneNumber.replace(/\D/g, '');
+    if (digits.length === 10) {
+      return `https://wa.me/91${digits}`;
+    }
+    return `https://wa.me/${digits}`;
+  }
+
+  getEmailLabel(email?: string): string {
+    if (!email) return 'Email';
+    return email.toLowerCase().includes('gmail') ? 'Gmail' : 'Email';
   }
 
   ngOnInit(): void {

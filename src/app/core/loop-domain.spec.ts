@@ -301,4 +301,41 @@ describe('LOOP Core Domain & Ledger Verification', () => {
     expect(completedItems.length).toBe(1);
     expect(completedItems[0].title).toBe('Settled Dinner');
   });
+
+  it('11. should update person details and reflect across obligations and activities', async () => {
+    const priya = await personRepo.create({
+      name: 'Priya',
+      phoneNumber: '9876543210',
+      email: 'priya@old.com',
+      notes: 'Old note',
+    });
+
+    const ob = await obligationRepo.createMoneyObligation({
+      personId: priya.id,
+      direction: 'LENT',
+      title: 'Groceries split',
+      amount: 450,
+    });
+
+    expect(ob.personName).toBe('Priya');
+
+    // Update person
+    await personRepo.update(priya.id, {
+      name: 'Priya Sharma',
+      phoneNumber: '9988776655',
+      email: 'priya@new.com',
+      notes: 'Colleague at TechCorp',
+    });
+
+    const updated = await personRepo.getById(priya.id);
+    expect(updated).not.toBeNull();
+    expect(updated!.name).toBe('Priya Sharma');
+    expect(updated!.phoneNumber).toBe('9988776655');
+    expect(updated!.email).toBe('priya@new.com');
+    expect(updated!.notes).toBe('Colleague at TechCorp');
+
+    // Verify obligations join with updated person name
+    const obligations = await obligationRepo.getAllWithDetails({ personId: priya.id });
+    expect(obligations[0].personName).toBe('Priya Sharma');
+  });
 });

@@ -2,10 +2,13 @@
   <div class="modal-dialog card-container" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <div class="title-wrap">
-        <ion-icon name="swap-horizontal-outline" class="header-icon"></ion-icon>
+        <ion-icon [name]="isMutualSettlement() ? 'swap-horizontal-outline' : 'checkmark-done-circle-outline'" class="header-icon"></ion-icon>
         <div>
-          <h2>Net Settlement</h2>
-          <span class="sub-text">Reconcile relationship with <strong>{{ balance().personName }}</strong></span>
+          <h2>{{ isMutualSettlement() ? 'Mutual Net Settlement' : 'Settle Balance' }}</h2>
+          <span class="sub-text">
+            {{ isMutualSettlement() ? 'Reconcile reciprocal debts with ' : 'Clear outstanding balance with ' }}
+            <strong>{{ balance().personName }}</strong>
+          </span>
         </div>
       </div>
       <button class="icon-btn" (click)="onClose()" title="Close">
@@ -15,17 +18,19 @@
 
     <!-- Breakdown Card -->
     <div class="breakdown-card">
-      <div class="breakdown-row">
-        <span class="label">{{ balance().personName }} owes you:</span>
-        <span class="value font-mono text-owed">₹{{ balance().totalOwedToYou.toLocaleString() }}</span>
-      </div>
-      <div class="breakdown-row">
-        <span class="label">You owe {{ balance().personName }}:</span>
-        <span class="value font-mono text-owing">₹{{ balance().totalYouOwe.toLocaleString() }}</span>
-      </div>
+      @if (isMutualSettlement()) {
+        <div class="breakdown-row">
+          <span class="label">{{ balance().personName }} owes you:</span>
+          <span class="value font-mono text-owed">₹{{ balance().totalOwedToYou.toLocaleString() }}</span>
+        </div>
+        <div class="breakdown-row">
+          <span class="label">You owe {{ balance().personName }}:</span>
+          <span class="value font-mono text-owing">₹{{ balance().totalYouOwe.toLocaleString() }}</span>
+        </div>
+      }
 
       <div class="net-summary">
-        <div class="net-label">FINAL NET SETTLEMENT:</div>
+        <div class="net-label">{{ isMutualSettlement() ? 'FINAL NET DIFFERENCE:' : 'TOTAL BALANCE TO SETTLE:' }}</div>
         <div class="net-amount font-mono" [class.text-owed]="balance().netBalance > 0" [class.text-owing]="balance().netBalance < 0">
           ₹{{ Math.abs(balance().netBalance).toLocaleString() }}
         </div>
@@ -44,20 +49,23 @@
     <form (ngSubmit)="confirmSettlement()" class="modal-form">
       <div class="form-group">
         <label for="settlementNotes">Settlement Notes (Optional)</label>
-        <input
+        <textarea
           id="settlementNotes"
-          type="text"
-          class="form-input"
-          placeholder="e.g. Cleared via Google Pay, Cash settlement..."
+          class="form-input form-textarea"
+          [placeholder]="isMutualSettlement() ? 'e.g. Cleared net difference via GPay, Cash...' : 'e.g. Cleared all tabs via GPay, Cash...'"
           [(ngModel)]="notes"
+          (input)="autoGrow($event)"
           name="notes"
-        />
+          rows="1"
+        ></textarea>
       </div>
 
       <div class="info-notice">
         <ion-icon name="information-circle-outline"></ion-icon>
         <span>
-          Marking as settled will clear active money obligations and record an immutable audit event in the timeline. Historical transactions are never deleted.
+          {{ isMutualSettlement() 
+            ? 'Offsets mutual debts and records an immutable audit log. Historical records are preserved.' 
+            : 'Marks all open obligations as fully paid in one go and records an audit log. Historical records are preserved.' }}
         </span>
       </div>
 
@@ -71,7 +79,7 @@
           [disabled]="isSubmitting()"
         >
           <ion-icon name="checkmark-done-circle-outline"></ion-icon>
-          {{ isSubmitting() ? 'Settling...' : 'Confirm Net Settlement' }}
+          {{ isSubmitting() ? 'Settling...' : (isMutualSettlement() ? 'Confirm Net Settlement' : 'Confirm Settlement') }}
         </button>
       </div>
     </form>

@@ -219,6 +219,44 @@
   font-size: 1.125rem;
 }
 
+.edit-person-btn {
+  background: var(--loop-bg-surface-elevated);
+  border: 0.0625rem solid var(--loop-border-subtle);
+  color: var(--loop-text-secondary);
+  border-radius: 50%;
+  width: 1.875rem;
+  height: 1.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.edit-person-btn:hover {
+  border-color: var(--loop-accent);
+  color: var(--loop-accent);
+  background: var(--loop-accent-glow);
+  transform: scale(1.08);
+}
+
+.edit-person-btn:active {
+  transform: scale(0.92);
+}
+
+.call-person-btn {
+  color: #0284c7;
+  text-decoration: none;
+}
+
+.call-person-btn:hover {
+  border-color: #0284c7;
+  color: #0284c7;
+  background: rgba(2, 132, 199, 0.15);
+}
+
 /* Empty state */
 .empty-state {
   text-align: center;

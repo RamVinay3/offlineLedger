@@ -27,6 +27,7 @@ import {
   shieldCheckmarkOutline,
   qrCodeOutline,
   chatbubbleEllipsesOutline,
+  callOutline,
 } from 'ionicons/icons';
 
 @Component({
@@ -82,7 +83,16 @@ export class DashboardComponent {
       shieldCheckmarkOutline,
       qrCodeOutline,
       chatbubbleEllipsesOutline,
+      callOutline,
     });
+  }
+
+  getPerson(personId: string) {
+    return this.state.people().find((p) => p.id === personId) || null;
+  }
+
+  getPersonPhone(personId: string): string | undefined {
+    return this.getPerson(personId)?.phoneNumber;
   }
 
   isOverdue(dueDate?: string): boolean {

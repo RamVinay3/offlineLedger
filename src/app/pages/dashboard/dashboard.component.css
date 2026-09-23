@@ -529,6 +529,15 @@
   border-color: var(--loop-accent);
 }
 
+.tool-circle-btn.call-btn {
+  color: #0284c7;
+  text-decoration: none;
+}
+.tool-circle-btn.call-btn:hover {
+  background: rgba(2, 132, 199, 0.15);
+  border-color: #0284c7;
+}
+
 .tool-circle-btn.chat-btn {
   color: #10b981;
 }

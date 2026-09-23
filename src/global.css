@@ -130,6 +130,17 @@ body {
   border: 0.0625rem solid var(--loop-neutral-border);
 }
 
+.form-textarea {
+  min-height: 2.75rem;
+  max-height: 10rem;
+  resize: none;
+  overflow-y: auto;
+  line-height: 1.45;
+  font-family: inherit;
+  field-sizing: content;
+  word-break: break-word;
+}
+
 /* Micro-animations */
 @keyframes fadeInSlideUp {
   from {

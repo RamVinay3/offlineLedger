@@ -58,7 +58,7 @@ export class SettlementRepository {
               ob.id,
               data.personId,
               remaining,
-              'Reconciled via relationship net settlement',
+              data.notes?.trim() || 'Settled via relationship reconciliation',
               now.substring(0, 10),
               now,
             ]

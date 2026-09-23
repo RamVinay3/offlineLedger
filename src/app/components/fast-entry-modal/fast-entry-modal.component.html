@@ -66,34 +66,54 @@
     </div>
 
     <form (ngSubmit)="saveEntry()" class="modal-form">
-      <!-- Who Selector -->
+      <!-- Who Selector / Locked Person Display -->
       <div class="form-group">
         <div class="label-row">
           <label for="personSelect">Who? <span class="required">*</span></label>
-          <button
-            type="button"
-            class="link-action-btn"
-            (click)="showAddPersonModal.set(true)"
-          >
-            <ion-icon name="person-add-outline"></ion-icon>
-            <span>New Person</span>
-          </button>
+          @if (!isPersonLocked()) {
+            <button
+              type="button"
+              class="link-action-btn"
+              (click)="showAddPersonModal.set(true)"
+            >
+              <ion-icon name="person-add-outline"></ion-icon>
+              <span>New Person</span>
+            </button>
+          }
         </div>
 
-        <select
-          id="personSelect"
-          class="form-input form-select"
-          [(ngModel)]="selectedPersonId"
-          name="selectedPersonId"
-          required
-        >
-          <option value="" disabled>Select a person...</option>
-          @for (p of state.people(); track p.id) {
-            @if (!p.isArchived) {
-              <option [value]="p.id">{{ p.name }}</option>
+        @if (isPersonLocked()) {
+          <div class="locked-person-pill">
+            <div class="locked-avatar">
+              {{ lockedPerson()?.name?.substring(0, 1)?.toUpperCase() || 'P' }}
+            </div>
+            <div class="locked-info">
+              <span class="locked-name">{{ lockedPerson()?.name || 'Selected Contact' }}</span>
+              @if (lockedPerson()?.notes) {
+                <span class="locked-sub">{{ lockedPerson()?.notes }}</span>
+              }
+            </div>
+            <div class="locked-badge" title="Locked to this person's ledger">
+              <ion-icon name="lock-closed-outline"></ion-icon>
+              <span>Fixed</span>
+            </div>
+          </div>
+        } @else {
+          <select
+            id="personSelect"
+            class="form-input form-select"
+            [(ngModel)]="selectedPersonId"
+            name="selectedPersonId"
+            required
+          >
+            <option value="" disabled>Select a person...</option>
+            @for (p of state.people(); track p.id) {
+              @if (!p.isArchived) {
+                <option [value]="p.id">{{ p.name }}</option>
+              }
             }
-          }
-        </select>
+          </select>
+        }
       </div>
 
       <!-- If MONEY: Title & Amount -->
@@ -115,14 +135,15 @@
 
         <div class="form-group">
           <label for="moneyTitle">For What? (Optional description)</label>
-          <input
+          <textarea
             id="moneyTitle"
-            type="text"
-            class="form-input"
+            class="form-input form-textarea"
             placeholder="e.g. Dinner split, Rent share, Cash loan..."
             [(ngModel)]="title"
+            (input)="autoGrow($event)"
             name="title"
-          />
+            rows="1"
+          ></textarea>
         </div>
       }
 
@@ -130,28 +151,30 @@
       @if (entryType() === 'ITEM') {
         <div class="form-group">
           <label for="itemName">Item Name <span class="required">*</span></label>
-          <input
+          <textarea
             id="itemName"
-            type="text"
-            class="form-input"
+            class="form-input form-textarea"
             placeholder="e.g. Sony Headphones, Clean Code book, Camera..."
             [(ngModel)]="title"
+            (input)="autoGrow($event)"
             name="title"
+            rows="1"
             required
             autofocus
-          />
+          ></textarea>
         </div>
 
         <div class="form-group">
           <label for="itemDesc">Details / Condition (Optional)</label>
-          <input
+          <textarea
             id="itemDesc"
-            type="text"
-            class="form-input"
+            class="form-input form-textarea"
             placeholder="e.g. With USB-C cable and carrying case"
             [(ngModel)]="description"
+            (input)="autoGrow($event)"
             name="description"
-          />
+            rows="1"
+          ></textarea>
         </div>
       }
 
@@ -159,16 +182,17 @@
       @if (entryType() === 'COMMITMENT') {
         <div class="form-group">
           <label for="commTitle">Commitment / Task <span class="required">*</span></label>
-          <input
+          <textarea
             id="commTitle"
-            type="text"
-            class="form-input"
+            class="form-input form-textarea"
             placeholder="e.g. Send project document, Share contact..."
             [(ngModel)]="title"
+            (input)="autoGrow($event)"
             name="title"
+            rows="1"
             required
             autofocus
-          />
+          ></textarea>
         </div>
       }
 
@@ -178,18 +202,50 @@
           {{ entryType() === 'ITEM' ? 'Return by' : 'Due Date' }} (Optional)
         </label>
         <div class="date-presets">
-          <button type="button" class="preset-btn" (click)="setDuePreset(3)">+3 Days</button>
-          <button type="button" class="preset-btn" (click)="setDuePreset(7)">+1 Week</button>
-          <button type="button" class="preset-btn" (click)="setDuePreset(30)">+1 Month</button>
-          <button type="button" class="preset-btn" (click)="dueDate = ''">Clear</button>
+          <button
+            type="button"
+            class="preset-btn"
+            [class.active]="selectedPreset() === 3"
+            (click)="setDuePreset(3)"
+          >
+            +3 Days
+          </button>
+          <button
+            type="button"
+            class="preset-btn"
+            [class.active]="selectedPreset() === 7"
+            (click)="setDuePreset(7)"
+          >
+            +1 Week
+          </button>
+          <button
+            type="button"
+            class="preset-btn"
+            [class.active]="selectedPreset() === 30"
+            (click)="setDuePreset(30)"
+          >
+            +1 Month
+          </button>
+          @if (dueDate) {
+            <button
+              type="button"
+              class="preset-btn clear-btn"
+              (click)="clearDueDate()"
+            >
+              Clear
+            </button>
+          }
         </div>
-        <input
-          id="dueDate"
-          type="date"
-          class="form-input"
-          [(ngModel)]="dueDate"
-          name="dueDate"
-        />
+        <div class="date-input-wrap">
+          <input
+            id="dueDate"
+            type="date"
+            class="form-input date-input"
+            [(ngModel)]="dueDate"
+            (ngModelChange)="onDateInputChange()"
+            name="dueDate"
+          />
+        </div>
         @if (getDueDateStatus(); as status) {
           <div
             class="due-date-hint animate-fade-in"

@@ -11,10 +11,18 @@
       }
     </div>
     <div class="header-right-action">
+      @if (currentPerson()?.phoneNumber) {
+        <a [href]="'tel:' + currentPerson()!.phoneNumber" class="icon-header-btn call-header-btn" title="Call {{ currentPerson()!.name }}">
+          <ion-icon name="call-outline"></ion-icon>
+        </a>
+      }
+      <button class="icon-header-btn" (click)="showEditPersonModal.set(true)" title="Edit Person Details">
+        <ion-icon name="create-outline"></ion-icon>
+      </button>
       @if (currentBalance() && (currentBalance()!.totalOwedToYou > 0 || currentBalance()!.totalYouOwe > 0)) {
-        <button class="settle-header-btn" (click)="showSettlementModal.set(true)">
+        <button class="settle-header-btn" (click)="showSettlementModal.set(true)" title="Net Settle">
           <ion-icon name="swap-horizontal-outline"></ion-icon>
-          <span>Settle</span>
+          <span>Net Settle</span>
         </button>
       }
     </div>
@@ -63,13 +71,25 @@
             <span class="sub-val font-mono text-owing">₹{{ currentBalance()!.totalYouOwe.toLocaleString() }}</span>
           </div>
         </div>
+      </div>
 
-        <!-- Settle Net Balance Button -->
-        @if (currentBalance()!.totalOwedToYou > 0 || currentBalance()!.totalYouOwe > 0) {
-          <button class="settle-action-btn" (click)="showSettlementModal.set(true)">
-            <ion-icon name="checkmark-done-outline"></ion-icon>
-            Settle Net Balance
-          </button>
+      <!-- Person Contact & Profile Info Strip -->
+      <div class="person-contact-strip">
+        @if (currentPerson()?.phoneNumber) {
+          <a [href]="'tel:' + currentPerson()!.phoneNumber" class="contact-pill call-pill" title="Call {{ currentPerson()!.name }}">
+            <ion-icon name="call-outline"></ion-icon>
+            <span>Call</span>
+          </a>
+          <a [href]="getWhatsAppUrl(currentPerson()!.phoneNumber)" target="_blank" class="contact-pill wa-pill" title="WhatsApp {{ currentPerson()!.name }}">
+            <ion-icon name="logo-whatsapp"></ion-icon>
+            <span>WhatsApp</span>
+          </a>
+        }
+        @if (currentPerson()?.email) {
+          <a [href]="'mailto:' + currentPerson()!.email" class="contact-pill mail-pill" [title]="'Email ' + currentPerson()!.email">
+            <ion-icon name="mail-outline"></ion-icon>
+            <span>{{ getEmailLabel(currentPerson()?.email) }}</span>
+          </a>
         }
       </div>
     }
@@ -131,9 +151,14 @@
       <div class="tab-pane">
         @if (moneyObligations().length === 0) {
           <div class="empty-tab card-container">
-            <p>No money obligations with {{ currentPerson()?.name }}.</p>
-            <button class="btn-secondary" (click)="openFastEntry('LENT', 'MONEY')">
-              + Add First Loan
+            <div class="empty-tab-icon">
+              <ion-icon name="cash-outline"></ion-icon>
+            </div>
+            <h4>No Money Obligations</h4>
+            <p>No active or past loans recorded with {{ currentPerson()?.name }}.</p>
+            <button class="empty-tab-btn" (click)="openFastEntry('LENT', 'MONEY')">
+              <ion-icon name="add-outline"></ion-icon>
+              <span>Add First Loan</span>
             </button>
           </div>
         } @else {
@@ -183,13 +208,15 @@
                 <!-- Payment history for this obligation -->
                 @if (ob.payments.length > 0) {
                   <div class="payment-history-wrap">
-                    <span class="history-title">Repayment History:</span>
+                    <span class="history-title">Repayment History</span>
                     @for (pmt of ob.payments; track pmt.id) {
                       <div class="history-entry">
-                        <span class="date font-mono">{{ formatDate(pmt.paymentDate) }}</span>
-                        <span class="amount font-mono">+{{ ob.currency }}{{ pmt.amount.toLocaleString() }}</span>
+                        <div class="history-top-row">
+                          <span class="date font-mono">{{ formatDate(pmt.paymentDate) }}</span>
+                          <span class="amount font-mono">+{{ ob.currency }}{{ pmt.amount.toLocaleString() }}</span>
+                        </div>
                         @if (pmt.notes) {
-                          <span class="notes">({{ pmt.notes }})</span>
+                          <div class="notes">{{ pmt.notes }}</div>
                         }
                       </div>
                     }
@@ -238,9 +265,14 @@
       <div class="tab-pane">
         @if (itemObligations().length === 0) {
           <div class="empty-tab card-container">
+            <div class="empty-tab-icon">
+              <ion-icon name="cube-outline"></ion-icon>
+            </div>
+            <h4>No Items Tracked</h4>
             <p>No physical items tracked with {{ currentPerson()?.name }}.</p>
-            <button class="btn-secondary" (click)="openFastEntry('LENT', 'ITEM')">
-              + Track Item
+            <button class="empty-tab-btn" (click)="openFastEntry('LENT', 'ITEM')">
+              <ion-icon name="add-outline"></ion-icon>
+              <span>Track Item</span>
             </button>
           </div>
         } @else {
@@ -301,9 +333,14 @@
       <div class="tab-pane">
         @if (commitmentObligations().length === 0) {
           <div class="empty-tab card-container">
+            <div class="empty-tab-icon">
+              <ion-icon name="checkbox-outline"></ion-icon>
+            </div>
+            <h4>No Pending Commitments</h4>
             <p>No pending commitments with {{ currentPerson()?.name }}.</p>
-            <button class="btn-secondary" (click)="openFastEntry('LENT', 'COMMITMENT')">
-              + Add Commitment
+            <button class="empty-tab-btn" (click)="openFastEntry('LENT', 'COMMITMENT')">
+              <ion-icon name="add-outline"></ion-icon>
+              <span>Add Commitment</span>
             </button>
           </div>
         } @else {
@@ -383,6 +420,7 @@
   @if (showFastEntry()) {
     <app-fast-entry-modal
       [initialPersonId]="personId()"
+      [lockPerson]="true"
       [initialDirection]="fastEntryDirection()"
       [initialType]="fastEntryType()"
       (saved)="onFastEntrySaved()"
@@ -426,5 +464,13 @@
       (closed)="selectedObligationForQr.set(null)"
       (upiIdSaved)="state.updateSettings({ upiId: $event })"
     ></app-upi-qr-modal>
+  }
+
+  <!-- Update Person Modal Overlay -->
+  @if (showEditPersonModal() && currentPerson()) {
+    <app-add-person-modal
+      [personToEdit]="currentPerson()"
+      (closed)="showEditPersonModal.set(false)"
+    ></app-add-person-modal>
   }
 </div>

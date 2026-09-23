@@ -98,14 +98,15 @@
 
       <div class="form-group">
         <label for="paymentNotes">Notes (Optional)</label>
-        <input
+        <textarea
           id="paymentNotes"
-          type="text"
-          class="form-input"
+          class="form-input form-textarea"
           placeholder="e.g. UPI, Cash, Bank Transfer..."
           [(ngModel)]="notes"
+          (input)="autoGrow($event)"
           name="notes"
-        />
+          rows="1"
+        ></textarea>
       </div>
 
       <div class="modal-actions">
