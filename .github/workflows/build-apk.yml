@@ -58,3 +58,18 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Prepare APK for Direct Download
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk LOOP-v1.0.0.apk
+
+      - name: Publish Direct Public Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0
+          name: LOOP v1.0.0 (Android)
+          body: |
+            ### LOOP — Offline Personal Ledger
+            Download and install the native Android APK directly on your phone:
+            - **[Download LOOP-v1.0.0.apk](https://github.com/RamVinay3/offlineLedger/releases/download/v1.0.0/LOOP-v1.0.0.apk)**
+          files: LOOP-v1.0.0.apk
