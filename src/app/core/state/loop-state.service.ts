@@ -1,4 +1,6 @@
 import { Injectable, signal, computed } from '@angular/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { Capacitor } from '@capacitor/core';
 import { PersonRepository } from '../repositories/person.repository';
 import { ObligationRepository } from '../repositories/obligation.repository';
 import { PaymentRepository } from '../repositories/payment.repository';
@@ -451,7 +453,7 @@ export class LoopStateService {
     this.applyTheme(updated.theme);
   }
 
-  applyTheme(theme: 'dark' | 'light' | 'system'): void {
+  async applyTheme(theme: 'dark' | 'light' | 'system'): Promise<void> {
     if (typeof document !== 'undefined') {
       let isLight = theme === 'light';
       if (theme === 'system' && typeof window !== 'undefined' && window.matchMedia) {
@@ -459,6 +461,20 @@ export class LoopStateService {
       }
       document.body.classList.toggle('light-theme', isLight);
       document.documentElement.classList.toggle('light-theme', isLight);
+
+      if (Capacitor.isNativePlatform()) {
+        try {
+          if (isLight) {
+            await StatusBar.setStyle({ style: Style.Light });
+            await StatusBar.setBackgroundColor({ color: '#f8fafc' });
+          } else {
+            await StatusBar.setStyle({ style: Style.Dark });
+            await StatusBar.setBackgroundColor({ color: '#090d16' });
+          }
+        } catch (e) {
+          // Ignored on unsupported platforms
+        }
+      }
     }
   }
 }

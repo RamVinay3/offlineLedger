@@ -6,7 +6,7 @@
 }
 
 .app-header {
-  padding: 1.125rem 1.25rem 0.75rem;
+  padding: max(1.125rem, calc(0.875rem + env(safe-area-inset-top, 0px))) 1.25rem 0.75rem;
   display: flex;
   align-items: center;
   justify-content: space-between;

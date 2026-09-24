@@ -61,15 +61,20 @@ jobs:
 
       - name: Prepare APK for Direct Download
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk LOOP-v1.0.0.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk LOOP-v1.0.1.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk LOOP.apk
 
       - name: Publish Direct Public Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.0
-          name: LOOP v1.0.0 (Android)
+          tag_name: v1.0.1
+          name: LOOP v1.0.1 (Android - Status Bar Fix)
           body: |
-            ### LOOP — Offline Personal Ledger
-            Download and install the native Android APK directly on your phone:
-            - **[Download LOOP-v1.0.0.apk](https://github.com/RamVinay3/offlineLedger/releases/download/v1.0.0/LOOP-v1.0.0.apk)**
-          files: LOOP-v1.0.0.apk
+            ### LOOP v1.0.1 — Offline Personal Ledger
+            Fixed Android status bar collision with edge-to-edge safe area insets and dynamic theme matching.
+            
+            **Direct Download:**
+            - **[Download LOOP-v1.0.1.apk](https://github.com/RamVinay3/offlineLedger/releases/download/v1.0.1/LOOP-v1.0.1.apk)**
+          files: |
+            LOOP-v1.0.1.apk
+            LOOP.apk

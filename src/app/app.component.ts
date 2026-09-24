@@ -1,6 +1,8 @@
 import { Component, OnInit, ChangeDetectorRef, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonApp, IonRouterOutlet } from '@ionic/angular';
+import { StatusBar } from '@capacitor/status-bar';
+import { Capacitor } from '@capacitor/core';
 import { DatabaseService } from './core/database/database.service';
 import { SecurityService } from './core/services/security.service';
 import { LoopStateService } from './core/state/loop-state.service';
@@ -24,6 +26,14 @@ export class AppComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     try {
+      // 0. Ensure Android status bar does not overlay app header
+      if (Capacitor.isNativePlatform()) {
+        try {
+          await StatusBar.setOverlaysWebView({ overlay: false });
+        } catch (e) {
+          // Ignored on web/unsupported platforms
+        }
+      }
       // 1. Initialize SQLite Database
       await this.db.init();
 
