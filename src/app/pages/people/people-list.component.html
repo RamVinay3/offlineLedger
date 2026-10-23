@@ -5,10 +5,16 @@
       <ion-icon name="people-outline" class="header-icon"></ion-icon>
       <h1>People & Relationships</h1>
     </div>
-    <button class="btn-primary add-btn" (click)="showAddModal.set(true)">
-      <ion-icon name="person-add-outline"></ion-icon>
-      <span>Add</span>
-    </button>
+    <div class="header-actions">
+      <button class="btn-sync" (click)="showContactSync.set(true)" title="Sync Contacts from Phone or File">
+        <ion-icon name="sync-outline"></ion-icon>
+        <span>Sync</span>
+      </button>
+      <button class="btn-primary add-btn" (click)="showAddModal.set(true)">
+        <ion-icon name="person-add-outline"></ion-icon>
+        <span>Add</span>
+      </button>
+    </div>
   </header>
 
   <main class="content-body">
@@ -112,5 +118,13 @@
       [personToEdit]="selectedPersonForEdit()"
       (closed)="showEditModal.set(false); selectedPersonForEdit.set(null)"
     ></app-add-person-modal>
+  }
+
+  <!-- Contact Sync Modal -->
+  @if (showContactSync()) {
+    <app-contact-sync-modal
+      (closed)="showContactSync.set(false)"
+      (imported)="state.refreshAll()"
+    ></app-contact-sync-modal>
   }
 </div>

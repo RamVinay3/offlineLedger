@@ -1,0 +1,215 @@
+<div class="modal-backdrop animate-fade-in" (click)="onClose()">
+  <div class="modal-dialog card-container" (click)="$event.stopPropagation()">
+    <!-- Header -->
+    <div class="modal-header">
+      <div class="title-wrap">
+        <ion-icon name="repeat-outline" class="header-icon"></ion-icon>
+        <div>
+          <h2>Recurring Payments</h2>
+          <span class="subtext">Subscriptions, rent, EMI & regular cashflow</span>
+        </div>
+      </div>
+      <button class="icon-btn" (click)="onClose()" title="Close">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </div>
+
+    <!-- Monthly Cashflow Projection Overview -->
+    <div class="projections-bar">
+      <div class="proj-card outflow">
+        <div class="proj-label">
+          <ion-icon name="trending-down-outline"></ion-icon>
+          <span>Est. Monthly Outflow</span>
+        </div>
+        <div class="proj-val font-mono">
+          -{{ state.settings().currencySymbol }}{{ state.recurringFinancialSummary().monthlyOutflow.toLocaleString() }}
+        </div>
+      </div>
+
+      <div class="proj-card inflow">
+        <div class="proj-label">
+          <ion-icon name="trending-up-outline"></ion-icon>
+          <span>Est. Monthly Inflow</span>
+        </div>
+        <div class="proj-val font-mono">
+          +{{ state.settings().currencySymbol }}{{ state.recurringFinancialSummary().monthlyInflow.toLocaleString() }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Pills & Add Action -->
+    <div class="controls-row">
+      <div class="filter-pills">
+        <button
+          type="button"
+          class="pill-btn"
+          [class.active]="filter() === 'ALL'"
+          (click)="setFilter('ALL')"
+        >
+          All ({{ state.recurringPayments().length }})
+        </button>
+        <button
+          type="button"
+          class="pill-btn"
+          [class.active]="filter() === 'PAY'"
+          (click)="setFilter('PAY')"
+        >
+          To Pay
+        </button>
+        <button
+          type="button"
+          class="pill-btn"
+          [class.active]="filter() === 'RECEIVE'"
+          (click)="setFilter('RECEIVE')"
+        >
+          To Receive
+        </button>
+        <button
+          type="button"
+          class="pill-btn"
+          [class.active]="filter() === 'PAUSED'"
+          (click)="setFilter('PAUSED')"
+        >
+          Paused
+        </button>
+      </div>
+
+      <button type="button" class="add-btn-primary" (click)="onAddNew()">
+        <ion-icon name="add-outline"></ion-icon>
+        <span>+ Add</span>
+      </button>
+    </div>
+
+    <!-- List of Recurring Payments -->
+    <div class="recurring-list">
+      @if (filteredList().length === 0) {
+        <div class="empty-state">
+          <ion-icon name="repeat-outline" class="empty-icon"></ion-icon>
+          <h3>No recurring payments in this filter</h3>
+          <p>Automate reminders for rent, subscriptions, loan EMIs, or regular payments.</p>
+          <button type="button" class="btn-create-first" (click)="onAddNew()">
+            <ion-icon name="add-outline"></ion-icon>
+            <span>Add Recurring Payment</span>
+          </button>
+        </div>
+      } @else {
+        @for (r of filteredList(); track r.id) {
+          <div class="recurring-card" [class.paused]="!r.isActive">
+            <!-- Card Top Header -->
+            <div class="card-top">
+              <div class="cat-and-title">
+                <div class="cat-icon-wrap" [class.receive]="r.direction === 'RECEIVE'">
+                  <ion-icon [name]="getCategoryIcon(r.category)"></ion-icon>
+                </div>
+                <div>
+                  <div class="card-title-row">
+                    <span class="card-title">{{ r.title }}</span>
+                    @if (r.personName) {
+                      <span class="person-tag">
+                        <ion-icon name="person-outline"></ion-icon>
+                        {{ r.personName }}
+                      </span>
+                    }
+                  </div>
+                  <div class="card-freq-line">
+                    <span class="freq-badge">{{ r.frequency }}</span>
+                    <span class="reminder-tag">
+                      <ion-icon name="notifications-outline"></ion-icon>
+                      {{ r.reminderDaysBefore === 0 ? 'On due date' : r.reminderDaysBefore + 'd before' }} ({{ r.reminderTime }})
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Active Toggle -->
+              <div class="toggle-wrap" title="{{ r.isActive ? 'Active - click to pause' : 'Paused - click to resume' }}">
+                <button
+                  type="button"
+                  class="toggle-status-btn"
+                  [class.active]="r.isActive"
+                  (click)="toggleActive(r)"
+                >
+                  <ion-icon [name]="r.isActive ? 'pause-outline' : 'play-outline'"></ion-icon>
+                  <span>{{ r.isActive ? 'Active' : 'Paused' }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Amount and Due Date Row -->
+            <div class="amount-due-row">
+              <div class="amount-block">
+                <span class="amount-label">{{ r.direction === 'PAY' ? 'You Pay' : 'You Receive' }}</span>
+                <span
+                  class="amount-value font-mono"
+                  [class.text-pay]="r.direction === 'PAY'"
+                  [class.text-receive]="r.direction === 'RECEIVE'"
+                >
+                  {{ r.direction === 'PAY' ? '-' : '+' }}{{ r.currency }}{{ r.amount.toLocaleString() }}
+                </span>
+              </div>
+
+              <div class="due-block">
+                <span class="due-label">Next Due</span>
+                <div class="due-date-pill">
+                  <span class="date-text font-mono">{{ formatDate(r.nextDueDate) }}</span>
+                  <span class="status-badge" [class]="getDueBadge(r.nextDueDate).cls">
+                    {{ getDueBadge(r.nextDueDate).label }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cycle & History Stats -->
+            @if (r.totalPaidOccurrences > 0 || r.notes) {
+              <div class="stats-row">
+                @if (r.totalPaidOccurrences > 0) {
+                  <span class="stats-text font-mono">
+                    ✓ Paid {{ r.totalPaidOccurrences }} time{{ r.totalPaidOccurrences > 1 ? 's' : '' }} ({{ r.currency }}{{ r.totalPaidAmount.toLocaleString() }} total)
+                  </span>
+                }
+                @if (r.notes) {
+                  <span class="notes-text">{{ r.notes }}</span>
+                }
+              </div>
+            }
+
+            <!-- Action Buttons Footer -->
+            <div class="card-actions">
+              <button
+                type="button"
+                class="btn-mark-paid"
+                (click)="markPaid(r)"
+                [disabled]="actionInProgressId() === r.id"
+                title="Mark this cycle paid and advance to next due date"
+              >
+                <ion-icon name="checkmark-circle-outline"></ion-icon>
+                <span>Mark Paid</span>
+              </button>
+
+              <button
+                type="button"
+                class="btn-skip"
+                (click)="skipCycle(r)"
+                [disabled]="actionInProgressId() === r.id"
+                title="Skip this cycle and move to next due date"
+              >
+                <ion-icon name="play-forward-outline"></ion-icon>
+                <span>Skip</span>
+              </button>
+
+              <button
+                type="button"
+                class="btn-delete"
+                (click)="deleteRecurring(r)"
+                [disabled]="actionInProgressId() === r.id"
+                title="Delete recurring payment"
+              >
+                <ion-icon name="trash-outline"></ion-icon>
+              </button>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </div>
+</div>

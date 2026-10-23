@@ -663,3 +663,472 @@ body.light-theme .tool-circle-btn {
   margin: 0 0 1.25rem;
   line-height: 1.4;
 }
+
+/* Add Reminder Header Quick Button */
+.add-reminder-quick-btn {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #10b981;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.add-reminder-quick-btn:hover {
+  background: rgba(16, 185, 129, 0.22);
+}
+
+/* Standalone Reminders Section */
+.reminders-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.section-title-wrap.between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.reminder-section-icon {
+  font-size: 1.25rem;
+  color: #10b981;
+}
+
+.section-action-btn {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #10b981;
+  padding: 0.2rem 0.6rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+}
+
+.reminders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.reminder-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--loop-bg-surface);
+  border: 1px solid var(--loop-border-subtle);
+  border-left: 3px solid #10b981;
+  border-radius: 0.75rem;
+  transition: all 0.15s;
+}
+
+.reminder-checkbox {
+  width: 1.2rem;
+  height: 1.2rem;
+  accent-color: #10b981;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.reminder-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  cursor: pointer;
+}
+
+.reminder-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.reminder-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--loop-text-primary);
+}
+
+.reminder-cat-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+  font-size: 0.675rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.reminder-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+}
+
+.reminder-time {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.reminder-notes {
+  color: var(--loop-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 14rem;
+}
+
+.delete-reminder-btn {
+  background: transparent;
+  border: none;
+  color: var(--loop-text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: color 0.15s;
+}
+
+.delete-reminder-btn:hover {
+  color: var(--loop-owing);
+}
+
+/* Dashboard Checklists for Services/Commitments */
+.dash-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--loop-border-subtle);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin: 0.5rem 0;
+}
+
+.dash-check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.dash-check-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.8125rem;
+  color: var(--loop-text-primary);
+  cursor: pointer;
+}
+
+.dash-check-label.done span:first-child {
+  color: var(--loop-text-muted);
+  text-decoration: line-through;
+}
+
+.done-tag {
+  font-size: 0.675rem;
+  font-weight: 600;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+  padding: 0.1rem 0.35rem;
+  border-radius: 9999px;
+}
+
+/* Rescheduled badge & calendar tool button */
+.badge-rescheduled {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #fcd34d !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  transition: all 0.15s;
+}
+
+.badge-rescheduled:hover {
+  background: rgba(245, 158, 11, 0.25) !important;
+}
+
+.tool-circle-btn.cal-btn {
+  color: #38bdf8 !important;
+  border-color: rgba(56, 189, 248, 0.25) !important;
+}
+
+.tool-circle-btn.cal-btn:hover {
+  background: rgba(56, 189, 248, 0.15) !important;
+  border-color: #38bdf8 !important;
+}
+
+/* Recurring Header Quick Button */
+.add-recurring-quick-btn {
+  background: rgba(99, 102, 241, 0.14);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: #a5b4fc;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.3125rem 0.65rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.add-recurring-quick-btn:hover {
+  background: rgba(99, 102, 241, 0.25);
+  border-color: #818cf8;
+  color: #fff;
+}
+
+.badge-mini-count {
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 9999px;
+  line-height: 1.2;
+}
+
+/* Recurring Payments Section */
+.recurring-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: rgba(99, 102, 241, 0.04);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: 1.25rem;
+  padding: 1rem;
+}
+
+.recurring-section-icon {
+  font-size: 1.25rem;
+  color: #818cf8;
+}
+
+.actions-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-action-btn.secondary {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+}
+
+.section-action-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+}
+
+.recurring-projection-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  flex-wrap: wrap;
+}
+
+.proj-outflow-val {
+  color: #f87171;
+  font-weight: 700;
+}
+
+.proj-inflow-val {
+  color: #34d399;
+  font-weight: 700;
+}
+
+.sep {
+  color: #475569;
+}
+
+.recurring-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.75rem;
+}
+
+.recurring-dash-card {
+  background: var(--loop-bg-surface, #0f172a);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.875rem;
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.recurring-dash-card:hover {
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.dash-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+.dash-cat-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.14);
+  color: #f87171;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.dash-cat-wrap.receive {
+  background: rgba(16, 185, 129, 0.14);
+  color: #34d399;
+}
+
+.dash-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+}
+
+.dash-title-line {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.dash-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.dash-person-pill {
+  font-size: 0.6875rem;
+  color: #818cf8;
+  background: rgba(99, 102, 241, 0.12);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.dash-freq-line {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.freq-pill {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.due-badge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.dash-card-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 0.6rem;
+}
+
+.dash-amount {
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.dash-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.dash-btn-paid {
+  background: rgba(16, 185, 129, 0.16);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dash-btn-paid:hover {
+  background: rgba(16, 185, 129, 0.3);
+}
+
+.dash-btn-skip {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.35rem 0.55rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dash-btn-skip:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+

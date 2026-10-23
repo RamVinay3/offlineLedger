@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { LoopStateService } from '../../core/state/loop-state.service';
 import { PersonBalanceSummary, Person } from '../../core/models';
 import { AddPersonModalComponent } from '../../components/add-person-modal/add-person-modal.component';
+import { ContactSyncModalComponent } from '../../components/contact-sync-modal/contact-sync-modal.component';
 import { IonIcon } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
@@ -17,12 +18,19 @@ import {
   alertCircle,
   createOutline,
   callOutline,
+  syncOutline,
 } from 'ionicons/icons';
 
 @Component({
   selector: 'app-people-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, IonIcon, AddPersonModalComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    IonIcon,
+    AddPersonModalComponent,
+    ContactSyncModalComponent,
+  ],
   templateUrl: './people-list.component.html',
   styleUrl: './people-list.component.css',
 })
@@ -30,6 +38,7 @@ export class PeopleListComponent {
   Math = Math;
   searchQuery = '';
   showAddModal = signal<boolean>(false);
+  showContactSync = signal<boolean>(false);
   selectedPersonForEdit = signal<Person | null>(null);
   showEditModal = signal<boolean>(false);
 
@@ -54,6 +63,7 @@ export class PeopleListComponent {
       alertCircle,
       createOutline,
       callOutline,
+      syncOutline,
     });
   }
 

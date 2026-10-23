@@ -1,4 +1,4 @@
-export type ObligationType = 'MONEY' | 'ITEM' | 'COMMITMENT' | 'DEPOSIT' | 'OTHER';
+export type ObligationType = 'MONEY' | 'ITEM' | 'COMMITMENT' | 'SERVICE' | 'DEPOSIT' | 'OTHER';
 
 export type ObligationDirection = 'LENT' | 'BORROWED';
 
@@ -8,7 +8,7 @@ export type ItemStatus = 'ACTIVE' | 'DUE' | 'OVERDUE' | 'RETURNED';
 
 export type CommitmentStatus = 'PENDING' | 'COMPLETED' | 'OVERDUE' | 'CANCELLED';
 
-export type ReminderType = 'ON_DUE_DATE' | 'ONE_DAY_BEFORE' | 'AFTER_DUE_DATE' | 'CUSTOM';
+export type ReminderType = 'ON_DUE_DATE' | 'ONE_DAY_BEFORE' | 'AFTER_DUE_DATE' | 'CUSTOM' | 'STANDALONE';
 
 export type ActivityEventType =
   | 'OBLIGATION_CREATED'
@@ -21,7 +21,15 @@ export type ActivityEventType =
   | 'SETTLEMENT_CREATED'
   | 'PERSON_ARCHIVED'
   | 'PERSON_CREATED'
-  | 'PERSON_UPDATED';
+  | 'PERSON_UPDATED'
+  | 'COMMITMENT_FULFILLED'
+  | 'STANDALONE_REMINDER_CREATED'
+  | 'STANDALONE_REMINDER_COMPLETED'
+  | 'RECURRING_PAYMENT_CREATED'
+  | 'RECURRING_PAYMENT_PAID'
+  | 'RECURRING_PAYMENT_SKIPPED'
+  | 'RECURRING_PAYMENT_PAUSED'
+  | 'RECURRING_PAYMENT_RESUMED';
 
 export interface Person {
   id: string;
@@ -92,6 +100,17 @@ export interface Commitment {
   status: CommitmentStatus;
   completedAt?: string;
   createdAt: string;
+  linkedPaymentId?: string;
+  paymentAmount?: number;
+}
+
+export interface CommitmentItem {
+  id: string;
+  title: string;
+  isCompleted: boolean;
+  completedAt?: string;
+  linkedPaymentId?: string;
+  paymentAmount?: number;
 }
 
 export interface Settlement {
@@ -112,6 +131,66 @@ export interface Reminder {
   reminderDate: string;
   isNotified: boolean;
   createdAt: string;
+}
+
+export type StandaloneReminderCategory = 'INTERVIEW' | 'BILL' | 'WORK' | 'PERSONAL' | 'GENERAL';
+
+export interface StandaloneReminder {
+  id: string;
+  title: string;
+  category: StandaloneReminderCategory;
+  reminderDate: string; // ISO 8601
+  notes?: string;
+  isCompleted: boolean;
+  isNotified: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type RecurringPaymentFrequency =
+  | 'DAILY'
+  | 'WEEKLY'
+  | 'BIWEEKLY'
+  | 'MONTHLY'
+  | 'QUARTERLY'
+  | 'YEARLY';
+
+export type RecurringPaymentCategory =
+  | 'RENT'
+  | 'SUBSCRIPTION'
+  | 'UTILITY'
+  | 'LOAN_EMI'
+  | 'SALARY'
+  | 'INSURANCE'
+  | 'INVESTMENT'
+  | 'MEMBERSHIP'
+  | 'OTHER';
+
+export type RecurringPaymentDirection = 'PAY' | 'RECEIVE';
+
+export interface RecurringPayment {
+  id: string;
+  title: string;
+  amount: number;
+  currency: string;
+  direction: RecurringPaymentDirection;
+  frequency: RecurringPaymentFrequency;
+  personId?: string;
+  personName?: string;
+  category: RecurringPaymentCategory;
+  startDate: string; // ISO date YYYY-MM-DD
+  nextDueDate: string; // ISO date YYYY-MM-DD
+  endDate?: string;
+  reminderDaysBefore: number; // 0, 1, 2, 3, 7
+  reminderTime: string; // "09:00"
+  autoRecordObligation?: boolean;
+  isActive: boolean;
+  notes?: string;
+  lastPaidDate?: string;
+  totalPaidOccurrences: number;
+  totalPaidAmount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Activity {
@@ -138,12 +217,32 @@ export interface AppSettings {
   userName?: string;
 }
 
+export interface DueDateChangeRecord {
+  oldDueDate?: string;
+  newDueDate: string;
+  reason?: string;
+  changedAt: string;
+}
+
 export interface ObligationWithDetails extends Obligation {
   personName: string;
   remainingAmount: number;
   payments: Payment[];
   itemDetails?: Item;
   commitmentDetails?: Commitment;
+  commitmentList?: Commitment[];
+  dueDateChangeCount?: number;
+  dueDateHistory?: DueDateChangeRecord[];
+}
+
+export interface DeviceContact {
+  name: string;
+  phoneNumber?: string;
+  email?: string;
+  notes?: string;
+  alreadyExists?: boolean;
+  existingPersonId?: string;
+  selected?: boolean;
 }
 
 export interface PersonBalanceSummary {
@@ -167,4 +266,9 @@ export interface DashboardSummary {
   activeItemsOwingCount: number;
   overdueCount: number;
   dueSoonCount: number;
+  pendingRemindersCount: number;
+  activeRecurringCount: number;
+  dueRecurringCount: number;
+  monthlyRecurringOutflow: number;
+  monthlyRecurringInflow: number;
 }

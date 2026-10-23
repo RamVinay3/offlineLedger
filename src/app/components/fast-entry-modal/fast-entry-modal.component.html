@@ -5,8 +5,14 @@
       <div class="title-wrap">
         <ion-icon name="flash-outline" class="header-icon"></ion-icon>
         <h2>
-          <span class="header-pronoun">I</span>
-          <span>{{ direction() === 'LENT' ? 'Lent / Gave' : 'Borrowed / Owe' }}</span>
+          @if (entryType() === 'REMINDER') {
+            <span>One-Time Reminder</span>
+          } @else if (entryType() === 'RECURRING') {
+            <span>Recurring Payment</span>
+          } @else {
+            <span class="header-pronoun">I</span>
+            <span>{{ direction() === 'LENT' ? 'Lent / Gave' : 'Borrowed / Owe' }}</span>
+          }
         </h2>
       </div>
       <button class="icon-btn" (click)="onClose()" title="Close">
@@ -14,27 +20,48 @@
       </button>
     </div>
 
-    <!-- Direction Segment (Lend vs Borrow) -->
-    <div class="segment-wrap">
-      <button
-        type="button"
-        class="segment-btn"
-        [class.active-lent]="direction() === 'LENT'"
-        (click)="setDirection('LENT')"
-      >
-        Lend (They owe you)
-      </button>
-      <button
-        type="button"
-        class="segment-btn"
-        [class.active-borrow]="direction() === 'BORROWED'"
-        (click)="setDirection('BORROWED')"
-      >
-        Borrow (You owe them)
-      </button>
-    </div>
+    <!-- Direction Segment (Only for Money, Item, Service, or Recurring) -->
+    @if (entryType() === 'RECURRING') {
+      <div class="segment-wrap">
+        <button
+          type="button"
+          class="segment-btn"
+          [class.active-borrow]="recurringDirection() === 'PAY'"
+          (click)="recurringDirection.set('PAY')"
+        >
+          I Pay (Expense)
+        </button>
+        <button
+          type="button"
+          class="segment-btn"
+          [class.active-lent]="recurringDirection() === 'RECEIVE'"
+          (click)="recurringDirection.set('RECEIVE')"
+        >
+          I Receive (Income)
+        </button>
+      </div>
+    } @else if (entryType() !== 'REMINDER') {
+      <div class="segment-wrap">
+        <button
+          type="button"
+          class="segment-btn"
+          [class.active-lent]="direction() === 'LENT'"
+          (click)="setDirection('LENT')"
+        >
+          Lend (They owe you)
+        </button>
+        <button
+          type="button"
+          class="segment-btn"
+          [class.active-borrow]="direction() === 'BORROWED'"
+          (click)="setDirection('BORROWED')"
+        >
+          Borrow (You owe them)
+        </button>
+      </div>
+    }
 
-    <!-- Type Segment (Money vs Item vs Commitment) -->
+    <!-- Type Segment (Money vs Item vs Service/Commitment vs Reminder) -->
     <div class="type-segment">
       <button
         type="button"
@@ -61,62 +88,89 @@
         (click)="setEntryType('COMMITMENT')"
       >
         <ion-icon name="checkbox-outline"></ion-icon>
-        <span>Commitment</span>
+        <span>Service</span>
+      </button>
+      <button
+        type="button"
+        class="type-btn"
+        [class.selected]="entryType() === 'REMINDER'"
+        (click)="setEntryType('REMINDER')"
+      >
+        <ion-icon name="alarm-outline"></ion-icon>
+        <span>Reminder</span>
+      </button>
+      <button
+        type="button"
+        class="type-btn"
+        [class.selected]="entryType() === 'RECURRING'"
+        (click)="setEntryType('RECURRING')"
+      >
+        <ion-icon name="repeat-outline"></ion-icon>
+        <span>Recurring</span>
       </button>
     </div>
 
     <form (ngSubmit)="saveEntry()" class="modal-form">
-      <!-- Who Selector / Locked Person Display -->
-      <div class="form-group">
-        <div class="label-row">
-          <label for="personSelect">Who? <span class="required">*</span></label>
-          @if (!isPersonLocked()) {
-            <button
-              type="button"
-              class="link-action-btn"
-              (click)="showAddPersonModal.set(true)"
+      <!-- Who Selector (Hidden for standalone one-time reminders, optional for recurring) -->
+      @if (entryType() !== 'REMINDER') {
+        <div class="form-group">
+          <div class="label-row">
+            <label for="personSelect">
+              Who?
+              @if (entryType() === 'RECURRING') {
+                <span class="optional-tag">(Optional contact)</span>
+              } @else {
+                <span class="required">*</span>
+              }
+            </label>
+            @if (!isPersonLocked()) {
+              <button
+                type="button"
+                class="link-action-btn"
+                (click)="showAddPersonModal.set(true)"
+              >
+                <ion-icon name="person-add-outline"></ion-icon>
+                <span>New Person</span>
+              </button>
+            }
+          </div>
+
+          @if (isPersonLocked()) {
+            <div class="locked-person-pill">
+              <div class="locked-avatar">
+                {{ lockedPerson()?.name?.substring(0, 1)?.toUpperCase() || 'P' }}
+              </div>
+              <div class="locked-info">
+                <span class="locked-name">{{ lockedPerson()?.name || 'Selected Contact' }}</span>
+                @if (lockedPerson()?.notes) {
+                  <span class="locked-sub">{{ lockedPerson()?.notes }}</span>
+                }
+              </div>
+              <div class="locked-badge" title="Locked to this person's ledger">
+                <ion-icon name="lock-closed-outline"></ion-icon>
+                <span>Fixed</span>
+              </div>
+            </div>
+          } @else {
+            <select
+              id="personSelect"
+              class="form-input form-select"
+              [(ngModel)]="selectedPersonId"
+              name="selectedPersonId"
+              [required]="entryType() !== 'RECURRING'"
             >
-              <ion-icon name="person-add-outline"></ion-icon>
-              <span>New Person</span>
-            </button>
+              <option value="">{{ entryType() === 'RECURRING' ? 'None (General Bill / Subscription)' : 'Select a person...' }}</option>
+              @for (p of state.people(); track p.id) {
+                @if (!p.isArchived) {
+                  <option [value]="p.id">{{ p.name }}</option>
+                }
+              }
+            </select>
           }
         </div>
+      }
 
-        @if (isPersonLocked()) {
-          <div class="locked-person-pill">
-            <div class="locked-avatar">
-              {{ lockedPerson()?.name?.substring(0, 1)?.toUpperCase() || 'P' }}
-            </div>
-            <div class="locked-info">
-              <span class="locked-name">{{ lockedPerson()?.name || 'Selected Contact' }}</span>
-              @if (lockedPerson()?.notes) {
-                <span class="locked-sub">{{ lockedPerson()?.notes }}</span>
-              }
-            </div>
-            <div class="locked-badge" title="Locked to this person's ledger">
-              <ion-icon name="lock-closed-outline"></ion-icon>
-              <span>Fixed</span>
-            </div>
-          </div>
-        } @else {
-          <select
-            id="personSelect"
-            class="form-input form-select"
-            [(ngModel)]="selectedPersonId"
-            name="selectedPersonId"
-            required
-          >
-            <option value="" disabled>Select a person...</option>
-            @for (p of state.people(); track p.id) {
-              @if (!p.isArchived) {
-                <option [value]="p.id">{{ p.name }}</option>
-              }
-            }
-          </select>
-        }
-      </div>
-
-      <!-- If MONEY: Title & Amount -->
+      <!-- TYPE: MONEY -->
       @if (entryType() === 'MONEY') {
         <div class="form-group">
           <label for="moneyAmount">Amount ({{ state.settings().currencySymbol }}) <span class="required">*</span></label>
@@ -147,7 +201,7 @@
         </div>
       }
 
-      <!-- If ITEM: Name & Description -->
+      <!-- TYPE: ITEM -->
       @if (entryType() === 'ITEM') {
         <div class="form-group">
           <label for="itemName">Item Name <span class="required">*</span></label>
@@ -178,30 +232,374 @@
         </div>
       }
 
-      <!-- If COMMITMENT: Title -->
+      <!-- TYPE: COMMITMENT / SERVICE (with multi-item checklist checkboxes) -->
       @if (entryType() === 'COMMITMENT') {
         <div class="form-group">
-          <label for="commTitle">Commitment / Task <span class="required">*</span></label>
-          <textarea
-            id="commTitle"
-            class="form-input form-textarea"
-            placeholder="e.g. Send project document, Share contact..."
+          <label for="serviceTitle">Service / Commitment Title <span class="required">*</span></label>
+          <input
+            id="serviceTitle"
+            type="text"
+            class="form-input"
+            placeholder="e.g. Room Cleaning & Painting, UI Redesign, Errand"
             [(ngModel)]="title"
-            (input)="autoGrow($event)"
             name="title"
-            rows="1"
             required
             autofocus
+          />
+        </div>
+
+        <!-- Checklist Items Builder with Checkboxes -->
+        <div class="checklist-builder-section">
+          <label class="form-label">
+            Commitment Milestones / Deliverables
+            <span class="sub-label-note">(Checked off as they are fulfilled)</span>
+          </label>
+
+          <div class="checklist-items-wrap">
+            @for (item of commitmentChecklist; track $index) {
+              <div class="checklist-item-row">
+                <ion-icon name="checkbox-outline" class="checklist-bullet-icon"></ion-icon>
+                <input
+                  type="text"
+                  class="form-input checklist-input"
+                  placeholder="e.g. Milestone task..."
+                  [(ngModel)]="commitmentChecklist[$index]"
+                  [name]="'checklistItem_' + $index"
+                />
+                @if (commitmentChecklist.length > 1) {
+                  <button
+                    type="button"
+                    class="remove-item-btn"
+                    (click)="removeChecklistItem($index)"
+                    title="Remove item"
+                  >
+                    <ion-icon name="trash-outline"></ion-icon>
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Add new item input -->
+          <div class="add-item-row">
+            <input
+              type="text"
+              class="form-input inline-add-input"
+              placeholder="+ Add another milestone/task..."
+              [(ngModel)]="newChecklistItem"
+              name="newChecklistItem"
+              (keydown.enter)="$event.preventDefault(); addChecklistItem()"
+            />
+            <button
+              type="button"
+              class="add-item-btn"
+              [disabled]="!newChecklistItem.trim()"
+              (click)="addChecklistItem()"
+            >
+              <ion-icon name="add-outline"></ion-icon>
+              <span>Add</span>
+            </button>
+          </div>
+
+          <!-- Quick milestone preset suggestions -->
+          <div class="preset-suggestions">
+            <span class="preset-title">Quick Tasks:</span>
+            <button type="button" class="preset-tag" (click)="addChecklistItem('Draft & Proposal')">
+              + Draft
+            </button>
+            <button type="button" class="preset-tag" (click)="addChecklistItem('Fix & Repair')">
+              + Repair
+            </button>
+            <button type="button" class="preset-tag" (click)="addChecklistItem('Final Delivery')">
+              + Final Delivery
+            </button>
+            <button type="button" class="preset-tag" (click)="addChecklistItem('Inspection & Signoff')">
+              + Signoff
+            </button>
+          </div>
+        </div>
+
+        <!-- Optional Service Fee / Payment to attach -->
+        <div class="form-group service-fee-group">
+          <label for="serviceFee">
+            Service Fee / Linked Payment ({{ state.settings().currencySymbol }})
+            <span class="sub-label-note">(Optional)</span>
+          </label>
+          <input
+            id="serviceFee"
+            type="number"
+            class="form-input font-mono"
+            placeholder="e.g. 1500 (Optional amount to be settled upon fulfillment)"
+            [(ngModel)]="serviceFee"
+            name="serviceFee"
+            min="0"
+          />
+          <span class="field-hint">
+            💡 When milestones are checked off, LOOP will prompt to record repayment directly against this service thread!
+          </span>
+        </div>
+      }
+
+      <!-- TYPE: STANDALONE REMINDER (Interviews, Bills, Tasks - NO PERSON NEEDED!) -->
+      @if (entryType() === 'REMINDER') {
+        <div class="form-group">
+          <label>Category</label>
+          <div class="category-chips">
+            <button
+              type="button"
+              class="cat-chip"
+              [class.active]="reminderCategory() === 'INTERVIEW'"
+              (click)="reminderCategory.set('INTERVIEW')"
+            >
+              <ion-icon name="briefcase-outline"></ion-icon>
+              <span>Interview</span>
+            </button>
+            <button
+              type="button"
+              class="cat-chip"
+              [class.active]="reminderCategory() === 'BILL'"
+              (click)="reminderCategory.set('BILL')"
+            >
+              <ion-icon name="card-outline"></ion-icon>
+              <span>Bill / Payment</span>
+            </button>
+            <button
+              type="button"
+              class="cat-chip"
+              [class.active]="reminderCategory() === 'WORK'"
+              (click)="reminderCategory.set('WORK')"
+            >
+              <ion-icon name="business-outline"></ion-icon>
+              <span>Work</span>
+            </button>
+            <button
+              type="button"
+              class="cat-chip"
+              [class.active]="reminderCategory() === 'PERSONAL'"
+              (click)="reminderCategory.set('PERSONAL')"
+            >
+              <ion-icon name="person-outline"></ion-icon>
+              <span>Personal</span>
+            </button>
+            <button
+              type="button"
+              class="cat-chip"
+              [class.active]="reminderCategory() === 'GENERAL'"
+              (click)="reminderCategory.set('GENERAL')"
+            >
+              <ion-icon name="bookmark-outline"></ion-icon>
+              <span>General</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="reminderTitle">Reminder Title <span class="required">*</span></label>
+          <input
+            id="reminderTitle"
+            type="text"
+            class="form-input"
+            [placeholder]="reminderCategory() === 'INTERVIEW' ? 'e.g. Interview with Google / Stripe' : 'e.g. Pay Electricity Bill, Renew Passport...'"
+            [(ngModel)]="title"
+            name="title"
+            required
+            autofocus
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="reminderNotes">Details / Meeting Link / Reference (Optional)</label>
+          <textarea
+            id="reminderNotes"
+            class="form-input form-textarea"
+            placeholder="e.g. Google Meet link, account number, or preparation notes..."
+            [(ngModel)]="description"
+            name="description"
+            rows="2"
           ></textarea>
         </div>
       }
 
-      <!-- Due Date & Presets -->
+      <!-- TYPE: RECURRING PAYMENT -->
+      @if (entryType() === 'RECURRING') {
+        <!-- Quick Presets -->
+        <div class="form-group">
+          <label class="form-label">Quick Presets</label>
+          <div class="preset-chips-row">
+            <button
+              type="button"
+              class="preset-chip"
+              (click)="applyRecurringPreset({ title: 'Apartment Rent', category: 'RENT', frequency: 'MONTHLY', direction: 'PAY' })"
+            >
+              🏠 Rent
+            </button>
+            <button
+              type="button"
+              class="preset-chip"
+              (click)="applyRecurringPreset({ title: 'Netflix Subscription', amount: 649, category: 'SUBSCRIPTION', frequency: 'MONTHLY', direction: 'PAY' })"
+            >
+              📺 Netflix
+            </button>
+            <button
+              type="button"
+              class="preset-chip"
+              (click)="applyRecurringPreset({ title: 'Gym Membership', category: 'MEMBERSHIP', frequency: 'MONTHLY', direction: 'PAY' })"
+            >
+              💪 Gym
+            </button>
+            <button
+              type="button"
+              class="preset-chip"
+              (click)="applyRecurringPreset({ title: 'WiFi Internet', category: 'UTILITY', frequency: 'MONTHLY', direction: 'PAY' })"
+            >
+              📶 WiFi
+            </button>
+            <button
+              type="button"
+              class="preset-chip"
+              (click)="applyRecurringPreset({ title: 'Car / Home EMI', category: 'LOAN_EMI', frequency: 'MONTHLY', direction: 'PAY' })"
+            >
+              💳 Loan EMI
+            </button>
+            <button
+              type="button"
+              class="preset-chip"
+              (click)="applyRecurringPreset({ title: 'Client Retainer', category: 'SALARY', frequency: 'MONTHLY', direction: 'RECEIVE' })"
+            >
+              💼 Retainer
+            </button>
+          </div>
+        </div>
+
+        <!-- Title -->
+        <div class="form-group">
+          <label for="recurringTitle">Title <span class="required">*</span></label>
+          <input
+            id="recurringTitle"
+            type="text"
+            class="form-input"
+            placeholder="e.g. Apartment Rent, Spotify, House Help..."
+            [(ngModel)]="title"
+            name="title"
+            required
+            autofocus
+          />
+        </div>
+
+        <!-- Amount and Frequency Row -->
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="recurringAmount">Amount ({{ state.settings().currencySymbol }}) <span class="required">*</span></label>
+            <input
+              id="recurringAmount"
+              type="number"
+              class="form-input font-mono amount-input"
+              placeholder="5000"
+              [(ngModel)]="amount"
+              name="amount"
+              min="1"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="recurringFreq">Frequency <span class="required">*</span></label>
+            <select
+              id="recurringFreq"
+              class="form-input form-select"
+              [ngModel]="recurringFrequency()"
+              (ngModelChange)="recurringFrequency.set($event)"
+              name="recurringFrequency"
+            >
+              <option value="MONTHLY">Monthly</option>
+              <option value="WEEKLY">Weekly</option>
+              <option value="BIWEEKLY">Bi-Weekly</option>
+              <option value="DAILY">Daily</option>
+              <option value="QUARTERLY">Quarterly</option>
+              <option value="YEARLY">Yearly</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Reminder Alert Preferences -->
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="reminderDays">🔔 Remind Me</label>
+            <select
+              id="reminderDays"
+              class="form-input form-select"
+              [ngModel]="recurringReminderDays()"
+              (ngModelChange)="recurringReminderDays.set($event)"
+              name="recurringReminderDays"
+            >
+              <option [value]="0">On due date</option>
+              <option [value]="1">1 day before</option>
+              <option [value]="2">2 days before</option>
+              <option [value]="3">3 days before</option>
+              <option [value]="7">1 week before</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="recurringReminderTime">At Time</label>
+            <input
+              id="recurringReminderTime"
+              type="time"
+              class="form-input font-mono"
+              [(ngModel)]="recurringReminderTime"
+              name="recurringReminderTime"
+            />
+          </div>
+        </div>
+
+        <!-- Optional Auto Record in Ledger -->
+        @if (selectedPersonId) {
+          <div class="checkbox-option-card">
+            <input
+              type="checkbox"
+              id="autoRecordObligation"
+              [checked]="recurringAutoRecord()"
+              (change)="recurringAutoRecord.set(!recurringAutoRecord())"
+            />
+            <label for="autoRecordObligation">
+              <span class="chk-label">Record in Person's Ledger</span>
+              <span class="chk-sub">Automatically create ledger transaction when paid</span>
+            </label>
+          </div>
+        }
+      }
+
+      <!-- Due Date / First Due Date Section -->
       <div class="form-group">
         <label for="dueDate">
-          {{ entryType() === 'ITEM' ? 'Return by' : 'Due Date' }} (Optional)
+          @if (entryType() === 'REMINDER') {
+            <span>Reminder Date & Time <span class="required">*</span></span>
+          } @else if (entryType() === 'RECURRING') {
+            <span>First Due Date <span class="required">*</span></span>
+          } @else if (entryType() === 'ITEM') {
+            <span>Return by (Optional)</span>
+          } @else {
+            <span>Due Date (Optional)</span>
+          }
         </label>
+
         <div class="date-presets">
+          <button
+            type="button"
+            class="preset-btn"
+            [class.active]="selectedPreset() === 0"
+            (click)="setDuePreset(0)"
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            class="preset-btn"
+            [class.active]="selectedPreset() === 1"
+            (click)="setDuePreset(1)"
+          >
+            Tomorrow
+          </button>
           <button
             type="button"
             class="preset-btn"
@@ -218,14 +616,6 @@
           >
             +1 Week
           </button>
-          <button
-            type="button"
-            class="preset-btn"
-            [class.active]="selectedPreset() === 30"
-            (click)="setDuePreset(30)"
-          >
-            +1 Month
-          </button>
           @if (dueDate) {
             <button
               type="button"
@@ -236,7 +626,8 @@
             </button>
           }
         </div>
-        <div class="date-input-wrap">
+
+        <div class="date-row-wrap">
           <input
             id="dueDate"
             type="date"
@@ -244,8 +635,19 @@
             [(ngModel)]="dueDate"
             (ngModelChange)="onDateInputChange()"
             name="dueDate"
+            [required]="entryType() === 'REMINDER' || entryType() === 'RECURRING'"
           />
+          @if (entryType() === 'REMINDER') {
+            <input
+              type="time"
+              class="form-input time-input font-mono"
+              [(ngModel)]="reminderTime"
+              name="reminderTime"
+              title="Reminder Time"
+            />
+          }
         </div>
+
         @if (getDueDateStatus(); as status) {
           <div
             class="due-date-hint animate-fade-in"
@@ -267,7 +669,7 @@
           class="btn-primary"
           [disabled]="!isValid() || isSubmitting()"
         >
-          {{ isSubmitting() ? 'Saving...' : 'Save Obligation' }}
+          {{ isSubmitting() ? 'Saving...' : (entryType() === 'REMINDER' ? 'Set Reminder' : entryType() === 'RECURRING' ? 'Save Recurring Payment' : 'Save Obligation') }}
         </button>
       </div>
     </form>

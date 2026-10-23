@@ -8,6 +8,8 @@ import { ItemRepository } from '../repositories/item.repository';
 import { SettlementRepository } from '../repositories/settlement.repository';
 import { ActivityRepository } from '../repositories/activity.repository';
 import { SettingsRepository } from '../repositories/settings.repository';
+import { StandaloneReminderRepository } from '../repositories/standalone-reminder.repository';
+import { RecurringPaymentRepository } from '../repositories/recurring-payment.repository';
 import { NotificationService } from '../services/notification.service';
 import {
   Person,
@@ -18,9 +20,16 @@ import {
   PersonBalanceSummary,
   ObligationDirection,
   ObligationType,
+  StandaloneReminder,
+  StandaloneReminderCategory,
+  Commitment,
+  RecurringPayment,
+  RecurringPaymentFrequency,
+  RecurringPaymentCategory,
+  RecurringPaymentDirection,
 } from '../models';
 
-export type FilterCategory = 'ALL' | 'MONEY' | 'ITEMS' | 'COMMITMENTS' | 'DUE' | 'OVERDUE' | 'COMPLETED';
+export type FilterCategory = 'ALL' | 'MONEY' | 'ITEMS' | 'COMMITMENTS' | 'REMINDERS' | 'RECURRING' | 'DUE' | 'OVERDUE' | 'COMPLETED';
 
 @Injectable({
   providedIn: 'root',
@@ -31,6 +40,8 @@ export class LoopStateService {
   readonly people = signal<Person[]>([]);
   readonly obligations = signal<ObligationWithDetails[]>([]);
   readonly activities = signal<Activity[]>([]);
+  readonly standaloneReminders = signal<StandaloneReminder[]>([]);
+  readonly recurringPayments = signal<RecurringPayment[]>([]);
   readonly settings = signal<AppSettings>({
     currencySymbol: '₹',
     theme: 'dark',
@@ -69,7 +80,7 @@ export class LoopStateService {
     for (const ob of obList) {
       const isCompleted = ob.status === 'COMPLETED' || ob.status === 'CANCELLED';
 
-      if (ob.type === 'MONEY' && !isCompleted) {
+      if ((ob.type === 'MONEY' || ob.type === 'SERVICE') && !isCompleted && ob.remainingAmount > 0) {
         if (ob.direction === 'LENT') {
           totalOwedToYou += ob.remainingAmount;
           peopleOwedSet.add(ob.personId);
@@ -98,6 +109,11 @@ export class LoopStateService {
       }
     }
 
+    const pendingRemindersCount = this.standaloneReminders().filter((r) => !r.isCompleted).length;
+    const activeRecurringCount = this.activeRecurringPayments().length;
+    const dueRecurringCount = this.dueSoonRecurringPayments().length;
+    const { monthlyOutflow: monthlyRecurringOutflow, monthlyInflow: monthlyRecurringInflow } = this.recurringFinancialSummary();
+
     return {
       totalOwedToYou,
       totalYouOwe,
@@ -108,6 +124,85 @@ export class LoopStateService {
       activeItemsOwingCount,
       overdueCount,
       dueSoonCount,
+      pendingRemindersCount,
+      activeRecurringCount,
+      dueRecurringCount,
+      monthlyRecurringOutflow,
+      monthlyRecurringInflow,
+    };
+  });
+
+  /**
+   * Active recurring payments
+   */
+  readonly activeRecurringPayments = computed<RecurringPayment[]>(() => {
+    return this.recurringPayments().filter((r) => r.isActive);
+  });
+
+  /**
+   * Recurring payments that are overdue or due within the next 7 days
+   */
+  readonly dueSoonRecurringPayments = computed<RecurringPayment[]>(() => {
+    const active = this.activeRecurringPayments();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const sevenDaysLater = new Date(today);
+    sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
+
+    return active
+      .filter((r) => {
+        const d = new Date(r.nextDueDate + 'T00:00:00');
+        return d <= sevenDaysLater;
+      })
+      .sort((a, b) => new Date(a.nextDueDate).getTime() - new Date(b.nextDueDate).getTime());
+  });
+
+  /**
+   * Monthly financial projection from recurring payments
+   */
+  readonly recurringFinancialSummary = computed(() => {
+    const list = this.activeRecurringPayments();
+    let monthlyOutflow = 0;
+    let monthlyInflow = 0;
+
+    for (const item of list) {
+      let multiplier = 1;
+      switch (item.frequency) {
+        case 'DAILY':
+          multiplier = 30;
+          break;
+        case 'WEEKLY':
+          multiplier = 52 / 12;
+          break;
+        case 'BIWEEKLY':
+          multiplier = 26 / 12;
+          break;
+        case 'MONTHLY':
+          multiplier = 1;
+          break;
+        case 'QUARTERLY':
+          multiplier = 1 / 3;
+          break;
+        case 'YEARLY':
+          multiplier = 1 / 12;
+          break;
+      }
+
+      const monthlyAmount = item.amount * multiplier;
+      if (item.direction === 'PAY') {
+        monthlyOutflow += monthlyAmount;
+      } else {
+        monthlyInflow += monthlyAmount;
+      }
+    }
+
+    return {
+      monthlyOutflow: Math.round(monthlyOutflow),
+      monthlyInflow: Math.round(monthlyInflow),
+      netMonthlyProjection: Math.round(monthlyInflow - monthlyOutflow),
+      activeCount: list.length,
+      dueSoonCount: this.dueSoonRecurringPayments().length,
     };
   });
 
@@ -133,6 +228,13 @@ export class LoopStateService {
   });
 
   /**
+   * Active standalone reminders (interviews, bills, errands)
+   */
+  readonly activeStandaloneReminders = computed<StandaloneReminder[]>(() => {
+    return this.standaloneReminders().filter((r) => !r.isCompleted);
+  });
+
+  /**
    * Person balance summaries for all active people
    */
   readonly personBalances = computed<PersonBalanceSummary[]>(() => {
@@ -152,7 +254,7 @@ export class LoopStateService {
         if (ob.personId !== p.id) continue;
         const isCompleted = ob.status === 'COMPLETED' || ob.status === 'CANCELLED';
 
-        if (ob.type === 'MONEY' && !isCompleted) {
+        if ((ob.type === 'MONEY' || ob.type === 'SERVICE') && !isCompleted && ob.remainingAmount > 0) {
           activeObligationsCount++;
           if (ob.direction === 'LENT') {
             totalOwedToYou += ob.remainingAmount;
@@ -166,7 +268,7 @@ export class LoopStateService {
           activeObligationsCount++;
         }
 
-        if (ob.type === 'COMMITMENT' && !isCompleted) {
+        if ((ob.type === 'COMMITMENT' || ob.type === 'SERVICE') && !isCompleted) {
           activeObligationsCount++;
         }
 
@@ -220,7 +322,7 @@ export class LoopStateService {
         case 'ITEMS':
           return ob.type === 'ITEM' && (query.length > 0 ? true : isActive);
         case 'COMMITMENTS':
-          return ob.type === 'COMMITMENT' && (query.length > 0 ? true : isActive);
+          return (ob.type === 'COMMITMENT' || ob.type === 'SERVICE') && (query.length > 0 ? true : isActive);
         case 'DUE':
           return (
             isActive &&
@@ -235,6 +337,8 @@ export class LoopStateService {
           );
         case 'COMPLETED':
           return ob.status === 'COMPLETED';
+        case 'REMINDERS':
+          return false; // Handled in dedicated section
         case 'ALL':
         default:
           return query.length > 0 ? true : isActive;
@@ -270,6 +374,8 @@ export class LoopStateService {
     private settlementRepo: SettlementRepository,
     private activityRepo: ActivityRepository,
     private settingsRepo: SettingsRepository,
+    private standaloneReminderRepo: StandaloneReminderRepository,
+    private recurringPaymentRepo: RecurringPaymentRepository,
     private notificationService: NotificationService
   ) {}
 
@@ -283,17 +389,21 @@ export class LoopStateService {
   }
 
   async refreshAll(): Promise<void> {
-    const [people, obligations, activities, settings] = await Promise.all([
+    const [people, obligations, activities, settings, standaloneReminders, recurringPayments] = await Promise.all([
       this.personRepo.getAll(true),
       this.obligationRepo.getAllWithDetails(),
       this.activityRepo.getTimeline({ limit: 100 }),
       this.settingsRepo.getSettings(),
+      this.standaloneReminderRepo.getAll(true),
+      this.recurringPaymentRepo.getAll(),
     ]);
 
     this.people.set(people);
     this.obligations.set(obligations);
     this.activities.set(activities);
     this.settings.set(settings);
+    this.standaloneReminders.set(standaloneReminders);
+    this.recurringPayments.set(recurringPayments);
     this.applyTheme(settings.theme);
   }
 
@@ -391,6 +501,10 @@ export class LoopStateService {
     title: string;
     description?: string;
     dueDate?: string;
+    items?: string[];
+    amount?: number;
+    currency?: string;
+    type?: ObligationType;
   }): Promise<ObligationWithDetails> {
     const ob = await this.obligationRepo.createCommitmentObligation(data);
     if (data.dueDate) {
@@ -406,6 +520,24 @@ export class LoopStateService {
     }
     await this.refreshAll();
     return ob;
+  }
+
+  async toggleCommitmentItem(
+    commitmentId: string,
+    isCompleted: boolean
+  ): Promise<{ obligationId: string; itemTitle: string; allCompleted: boolean }> {
+    const res = await this.obligationRepo.toggleCommitmentItemStatus(commitmentId, isCompleted);
+    if (res.allCompleted) {
+      await this.notificationService.cancelRemindersForObligation(res.obligationId);
+    }
+    await this.refreshAll();
+    return res;
+  }
+
+  async addCommitmentItem(obligationId: string, title: string): Promise<Commitment> {
+    const item = await this.obligationRepo.addCommitmentItem(obligationId, title);
+    await this.refreshAll();
+    return item;
   }
 
   async recordPayment(data: {
@@ -431,8 +563,21 @@ export class LoopStateService {
     await this.refreshAll();
   }
 
-  async updateDueDate(obligationId: string, newDueDate: string): Promise<void> {
-    await this.obligationRepo.updateDueDate(obligationId, newDueDate);
+  async updateDueDate(obligationId: string, newDueDate: string, reason?: string): Promise<void> {
+    await this.obligationRepo.updateDueDate(obligationId, newDueDate, reason);
+    const ob = await this.obligationRepo.getByIdWithDetails(obligationId);
+    if (ob) {
+      await this.notificationService.cancelRemindersForObligation(obligationId);
+      await this.notificationService.scheduleObligationReminders({
+        obligationId: ob.id,
+        personId: ob.personId,
+        personName: ob.personName,
+        title: ob.title,
+        type: ob.type,
+        direction: ob.direction,
+        dueDate: newDueDate,
+      });
+    }
     await this.refreshAll();
   }
 
@@ -445,6 +590,134 @@ export class LoopStateService {
     await this.settlementRepo.settleRelationship(data);
     await this.refreshAll();
   }
+
+  // --- Standalone Reminder Actions ---
+
+  async createStandaloneReminder(data: {
+    title: string;
+    category?: StandaloneReminderCategory;
+    reminderDate: string;
+    notes?: string;
+  }): Promise<StandaloneReminder> {
+    const reminder = await this.standaloneReminderRepo.create(data);
+    await this.notificationService.scheduleStandaloneReminder(reminder);
+    await this.refreshAll();
+    return reminder;
+  }
+
+  async toggleStandaloneReminder(id: string, isCompleted: boolean): Promise<void> {
+    await this.standaloneReminderRepo.toggleComplete(id, isCompleted);
+    if (isCompleted) {
+      await this.notificationService.cancelStandaloneReminder(id);
+    } else {
+      const r = this.standaloneReminders().find((item) => item.id === id);
+      if (r) {
+        await this.notificationService.scheduleStandaloneReminder(r);
+      }
+    }
+    await this.refreshAll();
+  }
+
+  async deleteStandaloneReminder(id: string): Promise<void> {
+    await this.standaloneReminderRepo.delete(id);
+    await this.notificationService.cancelStandaloneReminder(id);
+    await this.refreshAll();
+  }
+
+  // --- Recurring Payment Actions ---
+
+  async createRecurringPayment(data: {
+    title: string;
+    amount: number;
+    currency?: string;
+    direction?: RecurringPaymentDirection;
+    frequency: RecurringPaymentFrequency;
+    personId?: string;
+    category?: RecurringPaymentCategory;
+    startDate: string;
+    nextDueDate?: string;
+    endDate?: string;
+    reminderDaysBefore?: number;
+    reminderTime?: string;
+    autoRecordObligation?: boolean;
+    notes?: string;
+  }): Promise<RecurringPayment> {
+    const payment = await this.recurringPaymentRepo.create(data);
+    await this.notificationService.scheduleRecurringPaymentReminder(payment);
+    await this.refreshAll();
+    return payment;
+  }
+
+  async updateRecurringPayment(
+    id: string,
+    updates: Partial<{
+      title: string;
+      amount: number;
+      currency: string;
+      direction: RecurringPaymentDirection;
+      frequency: RecurringPaymentFrequency;
+      personId?: string | null;
+      category: RecurringPaymentCategory;
+      startDate: string;
+      nextDueDate: string;
+      endDate?: string | null;
+      reminderDaysBefore: number;
+      reminderTime: string;
+      autoRecordObligation: boolean;
+      isActive: boolean;
+      notes?: string | null;
+    }>
+  ): Promise<RecurringPayment> {
+    const updated = await this.recurringPaymentRepo.update(id, updates);
+    if (updated.isActive) {
+      await this.notificationService.scheduleRecurringPaymentReminder(updated);
+    } else {
+      await this.notificationService.cancelRecurringPaymentReminder(id);
+    }
+    await this.refreshAll();
+    return updated;
+  }
+
+  async toggleRecurringPaymentActive(id: string, isActive: boolean): Promise<void> {
+    const updated = await this.recurringPaymentRepo.toggleActive(id, isActive);
+    if (isActive) {
+      await this.notificationService.scheduleRecurringPaymentReminder(updated);
+    } else {
+      await this.notificationService.cancelRecurringPaymentReminder(id);
+    }
+    await this.refreshAll();
+  }
+
+  async recordRecurringPaymentCycle(
+    id: string,
+    recordInLedger = false
+  ): Promise<{ payment: RecurringPayment; nextDueDate: string }> {
+    const res = await this.recurringPaymentRepo.recordPaymentCycle(id, recordInLedger);
+    if (res.payment.isActive) {
+      await this.notificationService.scheduleRecurringPaymentReminder(res.payment);
+    }
+    await this.refreshAll();
+    return res;
+  }
+
+  async skipRecurringPaymentCycle(
+    id: string
+  ): Promise<{ payment: RecurringPayment; nextDueDate: string }> {
+    const res = await this.recurringPaymentRepo.skipCycle(id);
+    if (res.payment.isActive) {
+      await this.notificationService.scheduleRecurringPaymentReminder(res.payment);
+    }
+    await this.refreshAll();
+    return res;
+  }
+
+  async deleteRecurringPayment(id: string): Promise<void> {
+    await this.recurringPaymentRepo.delete(id);
+    await this.notificationService.cancelRecurringPaymentReminder(id);
+    await this.refreshAll();
+  }
+
+  // --- Settings & Themes ---
 
   async updateSettings(partial: Partial<AppSettings>): Promise<void> {
     await this.settingsRepo.saveSettings(partial);
@@ -471,7 +744,7 @@ export class LoopStateService {
             await StatusBar.setStyle({ style: Style.Dark });
             await StatusBar.setBackgroundColor({ color: '#090d16' });
           }
-        } catch (e) {
+        } catch {
           // Ignored on unsupported platforms
         }
       }

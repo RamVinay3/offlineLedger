@@ -145,4 +145,48 @@ CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS standalone_reminders (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  category TEXT DEFAULT 'GENERAL',
+  reminder_date TEXT NOT NULL,
+  notes TEXT,
+  is_completed INTEGER DEFAULT 0,
+  is_notified INTEGER DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_standalone_reminders_date ON standalone_reminders(reminder_date);
+CREATE INDEX IF NOT EXISTS idx_standalone_reminders_completed ON standalone_reminders(is_completed);
+
+CREATE TABLE IF NOT EXISTS recurring_payments (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  amount REAL NOT NULL,
+  currency TEXT DEFAULT '₹',
+  direction TEXT DEFAULT 'PAY',
+  frequency TEXT NOT NULL,
+  person_id TEXT,
+  category TEXT DEFAULT 'OTHER',
+  start_date TEXT NOT NULL,
+  next_due_date TEXT NOT NULL,
+  end_date TEXT,
+  reminder_days_before INTEGER DEFAULT 1,
+  reminder_time TEXT DEFAULT '09:00',
+  auto_record_obligation INTEGER DEFAULT 0,
+  is_active INTEGER DEFAULT 1,
+  notes TEXT,
+  last_paid_date TEXT,
+  total_paid_occurrences INTEGER DEFAULT 0,
+  total_paid_amount REAL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (person_id) REFERENCES people(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_recurring_next_due ON recurring_payments(next_due_date);
+CREATE INDEX IF NOT EXISTS idx_recurring_active ON recurring_payments(is_active);
+CREATE INDEX IF NOT EXISTS idx_recurring_person ON recurring_payments(person_id);
 `;

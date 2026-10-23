@@ -45,6 +45,9 @@ export class DatabaseService {
 
         if (savedBinary && savedBinary.length > 0) {
           this.db = new this.sqlJs.Database(savedBinary);
+          // Run schema to ensure any new tables/indexes are created
+          this.db.run(SCHEMA_SQL);
+          await this.saveToIndexedDB();
         } else {
           this.db = new this.sqlJs.Database();
           // Initialize schema
@@ -183,6 +186,8 @@ export class DatabaseService {
       'commitments',
       'settlements',
       'reminders',
+      'standalone_reminders',
+      'recurring_payments',
       'activities',
       'settings',
     ];
@@ -203,6 +208,8 @@ export class DatabaseService {
       // Clear existing records in reverse dependency order
       const tables = [
         'activities',
+        'recurring_payments',
+        'standalone_reminders',
         'reminders',
         'settlements',
         'commitments',

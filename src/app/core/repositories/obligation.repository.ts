@@ -9,6 +9,7 @@ import {
   Payment,
   Item,
   Commitment,
+  DueDateChangeRecord,
 } from '../models';
 
 @Injectable({
@@ -96,27 +97,48 @@ export class ObligationRepository {
         }
       }
 
-      // Fetch commitment details if COMMITMENT type
+      // Fetch commitment details if COMMITMENT or SERVICE type
       let commitmentDetails: Commitment | undefined = undefined;
-      if (row.type === 'COMMITMENT') {
+      let commitmentList: Commitment[] = [];
+      if (row.type === 'COMMITMENT' || row.type === 'SERVICE') {
         const commRows = await this.db.query(
-          'SELECT * FROM commitments WHERE obligation_id = ? LIMIT 1',
+          'SELECT * FROM commitments WHERE obligation_id = ? ORDER BY created_at ASC',
           [row.id]
         );
-        if (commRows.length > 0) {
-          commitmentDetails = {
-            id: commRows[0].id,
-            obligationId: commRows[0].obligation_id,
-            personId: commRows[0].person_id,
-            title: commRows[0].title,
-            description: commRows[0].description || undefined,
-            dueDate: commRows[0].due_date || undefined,
-            status: commRows[0].status,
-            completedAt: commRows[0].completed_at || undefined,
-            createdAt: commRows[0].created_at,
-          };
+        commitmentList = commRows.map((c) => ({
+          id: c.id,
+          obligationId: c.obligation_id,
+          personId: c.person_id,
+          title: c.title,
+          description: c.description || undefined,
+          dueDate: c.due_date || undefined,
+          status: c.status,
+          completedAt: c.completed_at || undefined,
+          createdAt: c.created_at,
+        }));
+        if (commitmentList.length > 0) {
+          commitmentDetails = commitmentList[0];
         }
       }
+
+      // Fetch due date change history
+      const dueDateActivities = await this.db.query(
+        `SELECT metadata_json, created_at FROM activities WHERE obligation_id = ? AND event_type = 'DUE_DATE_CHANGED' ORDER BY created_at ASC`,
+        [row.id]
+      );
+      const dueDateHistory: DueDateChangeRecord[] = dueDateActivities.map((a) => {
+        try {
+          const m = JSON.parse(a.metadata_json || '{}');
+          return {
+            oldDueDate: m.oldDueDate,
+            newDueDate: m.newDueDate,
+            reason: m.reason,
+            changedAt: a.created_at,
+          };
+        } catch {
+          return { newDueDate: '', changedAt: a.created_at };
+        }
+      });
 
       // Refresh overdue status if active and past due date
       let status: ObligationStatus = row.status;
@@ -156,6 +178,9 @@ export class ObligationRepository {
         })),
         itemDetails,
         commitmentDetails,
+        commitmentList,
+        dueDateChangeCount: dueDateHistory.length,
+        dueDateHistory,
       });
     }
 
@@ -293,7 +318,7 @@ export class ObligationRepository {
   }
 
   /**
-   * Create Commitment Obligation
+   * Create Commitment / Service Obligation with multiple checklist items and optional amount
    */
   async createCommitmentObligation(data: {
     personId: string;
@@ -301,40 +326,65 @@ export class ObligationRepository {
     title: string;
     description?: string;
     dueDate?: string;
+    items?: string[];
+    amount?: number;
+    currency?: string;
+    type?: ObligationType;
   }): Promise<ObligationWithDetails> {
     const id = crypto.randomUUID();
-    const commId = crypto.randomUUID();
     const now = new Date().toISOString();
+    const type: ObligationType = data.type || (data.amount && data.amount > 0 ? 'SERVICE' : 'COMMITMENT');
+    const amount = data.amount || 0;
+    const currency = data.currency || '₹';
 
     await this.db.executeTransaction(async () => {
       await this.db.run(
         `INSERT INTO obligations (id, person_id, type, direction, title, description, amount, currency, status, due_date, created_at, updated_at)
-         VALUES (?, ?, 'COMMITMENT', ?, ?, ?, 0, '', 'ACTIVE', ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?)`,
         [
           id,
           data.personId,
+          type,
           data.direction,
           data.title.trim(),
           data.description?.trim() || null,
+          amount,
+          amount > 0 ? currency : '',
           data.dueDate || null,
           now,
           now,
         ]
       );
 
-      await this.db.run(
-        `INSERT INTO commitments (id, obligation_id, person_id, title, description, due_date, status, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, 'PENDING', ?)`,
-        [
-          commId,
-          id,
-          data.personId,
-          data.title.trim(),
-          data.description?.trim() || null,
-          data.dueDate || null,
-          now,
-        ]
-      );
+      // If amount attached, track in money_transactions
+      if (amount > 0) {
+        await this.db.run(
+          `INSERT INTO money_transactions (id, obligation_id, original_amount, remaining_amount, currency, created_at)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [crypto.randomUUID(), id, amount, amount, currency, now]
+        );
+      }
+
+      // Add checklist items (or fallback to obligation title)
+      const checklist = (data.items && data.items.length > 0)
+        ? data.items.map((it) => it.trim()).filter((it) => it.length > 0)
+        : [data.title.trim()];
+
+      for (const itemTitle of checklist) {
+        await this.db.run(
+          `INSERT INTO commitments (id, obligation_id, person_id, title, description, due_date, status, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, 'PENDING', ?)`,
+          [
+            crypto.randomUUID(),
+            id,
+            data.personId,
+            itemTitle,
+            data.description?.trim() || null,
+            data.dueDate || null,
+            now,
+          ]
+        );
+      }
 
       await this.db.run(
         `INSERT INTO activities (id, person_id, obligation_id, event_type, description, metadata_json, created_at)
@@ -343,8 +393,8 @@ export class ObligationRepository {
           crypto.randomUUID(),
           data.personId,
           id,
-          `Commitment added: "${data.title.trim()}"`,
-          JSON.stringify({ title: data.title.trim() }),
+          `${type === 'SERVICE' ? 'Service' : 'Commitment'} added: "${data.title.trim()}" (${checklist.length} checklist milestone${checklist.length > 1 ? 's' : ''})`,
+          JSON.stringify({ title: data.title.trim(), checklistCount: checklist.length, amount }),
           now,
         ]
       );
@@ -354,13 +404,108 @@ export class ObligationRepository {
   }
 
   /**
-   * Update Due Date
+   * Toggle commitment checklist item status (partial fulfillment support)
    */
-  async updateDueDate(obligationId: string, newDueDate: string): Promise<void> {
+  async toggleCommitmentItemStatus(
+    commitmentId: string,
+    isCompleted: boolean
+  ): Promise<{ obligationId: string; itemTitle: string; allCompleted: boolean }> {
+    const now = new Date().toISOString();
+    const rows = await this.db.query('SELECT * FROM commitments WHERE id = ?', [commitmentId]);
+    if (rows.length === 0) {
+      throw new Error('Commitment item not found.');
+    }
+    const item = rows[0];
+    const obligationId = item.obligation_id;
+
+    let allCompleted = false;
+
+    await this.db.executeTransaction(async () => {
+      await this.db.run(
+        'UPDATE commitments SET status = ?, completed_at = ? WHERE id = ?',
+        [isCompleted ? 'COMPLETED' : 'PENDING', isCompleted ? now : null, commitmentId]
+      );
+
+      // Check all commitment items for this obligation
+      const allItems = await this.db.query('SELECT status FROM commitments WHERE obligation_id = ?', [obligationId]);
+      allCompleted = allItems.length > 0 && allItems.every((it) => it.status === 'COMPLETED');
+
+      // Update parent obligation status
+      if (allCompleted) {
+        await this.db.run(
+          'UPDATE obligations SET status = ?, completed_at = ?, updated_at = ? WHERE id = ?',
+          ['COMPLETED', now, now, obligationId]
+        );
+      } else {
+        await this.db.run(
+          'UPDATE obligations SET status = ?, completed_at = NULL, updated_at = ? WHERE id = ?',
+          ['ACTIVE', now, obligationId]
+        );
+      }
+
+      // Log activity
+      const actionText = isCompleted ? 'Fulfilled commitment' : 'Reopened commitment';
+      await this.db.run(
+        `INSERT INTO activities (id, person_id, obligation_id, event_type, description, metadata_json, created_at)
+         VALUES (?, ?, ?, 'COMMITMENT_FULFILLED', ?, ?, ?)`,
+        [
+          crypto.randomUUID(),
+          item.person_id,
+          obligationId,
+          `${actionText}: "${item.title}"`,
+          JSON.stringify({ commitmentId, title: item.title, isCompleted, allCompleted }),
+          now,
+        ]
+      );
+    });
+
+    return { obligationId, itemTitle: item.title, allCompleted };
+  }
+
+  /**
+   * Add a checklist item to an existing commitment/service obligation
+   */
+  async addCommitmentItem(obligationId: string, title: string): Promise<Commitment> {
+    const now = new Date().toISOString();
+    const obRows = await this.db.query('SELECT * FROM obligations WHERE id = ?', [obligationId]);
+    if (obRows.length === 0) throw new Error('Obligation not found.');
+    const ob = obRows[0];
+
+    const id = crypto.randomUUID();
+    await this.db.run(
+      `INSERT INTO commitments (id, obligation_id, person_id, title, description, due_date, status, created_at)
+       VALUES (?, ?, ?, ?, NULL, ?, 'PENDING', ?)`,
+      [id, obligationId, ob.person_id, title.trim(), ob.due_date || null, now]
+    );
+
+    // If obligation was completed, reopen it since new item is pending
+    if (ob.status === 'COMPLETED') {
+      await this.db.run('UPDATE obligations SET status = ?, completed_at = NULL, updated_at = ? WHERE id = ?', [
+        'ACTIVE',
+        now,
+        obligationId,
+      ]);
+    }
+
+    return {
+      id,
+      obligationId,
+      personId: ob.person_id,
+      title: title.trim(),
+      status: 'PENDING',
+      createdAt: now,
+    };
+  }
+
+  /**
+   * Update Due Date with full history tracking and reason
+   */
+  async updateDueDate(obligationId: string, newDueDate: string, reason?: string): Promise<void> {
     const now = new Date().toISOString();
     const rows = await this.db.query('SELECT * FROM obligations WHERE id = ?', [obligationId]);
     if (rows.length === 0) return;
     const ob = rows[0];
+    const oldDueDate = ob.due_date;
 
     await this.db.executeTransaction(async () => {
       await this.db.run(
@@ -373,13 +518,14 @@ export class ObligationRepository {
           'UPDATE items SET expected_return_date = ? WHERE obligation_id = ?',
           [newDueDate, obligationId]
         );
-      } else if (ob.type === 'COMMITMENT') {
+      } else if (ob.type === 'COMMITMENT' || ob.type === 'SERVICE') {
         await this.db.run(
           'UPDATE commitments SET due_date = ? WHERE obligation_id = ?',
           [newDueDate, obligationId]
         );
       }
 
+      const reasonSuffix = reason && reason.trim().length > 0 ? ` (${reason.trim()})` : '';
       await this.db.run(
         `INSERT INTO activities (id, person_id, obligation_id, event_type, description, metadata_json, created_at)
          VALUES (?, ?, ?, 'DUE_DATE_CHANGED', ?, ?, ?)`,
@@ -387,8 +533,8 @@ export class ObligationRepository {
           crypto.randomUUID(),
           ob.person_id,
           obligationId,
-          `Due date changed to ${newDueDate}`,
-          JSON.stringify({ oldDueDate: ob.due_date, newDueDate }),
+          `Due date changed to ${newDueDate}${reasonSuffix}`,
+          JSON.stringify({ oldDueDate, newDueDate, reason: reason?.trim() || 'Rescheduled' }),
           now,
         ]
       );

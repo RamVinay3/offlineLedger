@@ -35,6 +35,35 @@
   font-weight: 700;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-sync {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #10b981;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: 0.625rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-sync:hover {
+  background: rgba(16, 185, 129, 0.22);
+}
+
+.btn-sync ion-icon {
+  font-size: 1rem;
+}
+
 .add-btn {
   padding: 0.5rem 0.875rem;
   font-size: 0.8125rem;

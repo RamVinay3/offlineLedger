@@ -798,3 +798,329 @@ body.light-theme .tool-circle-btn {
 .empty-tab-btn:hover ion-icon {
   color: #ffffff;
 }
+
+/* Due Date Reschedule Badge & Calendar Button */
+.badge-rescheduled {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #fcd34d !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.725rem;
+  transition: all 0.15s;
+}
+
+.badge-rescheduled:hover {
+  background: rgba(245, 158, 11, 0.25) !important;
+  transform: scale(1.02);
+}
+
+.cal-btn {
+  background: rgba(56, 189, 248, 0.12) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
+}
+
+.cal-btn:hover {
+  background: rgba(56, 189, 248, 0.25) !important;
+}
+
+/* Service & Commitment Checklists */
+.service-card {
+  border-left: 3px solid #6366f1 !important;
+}
+
+.text-service {
+  color: #a855f7 !important;
+}
+
+.amount-sub {
+  font-size: 0.7rem;
+  color: var(--loop-text-muted);
+  font-weight: 500;
+  margin-left: 0.2rem;
+}
+
+.milestones-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+}
+
+.milestone-counter {
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: var(--loop-text-secondary);
+}
+
+.milestone-progress-bar {
+  width: 100%;
+  height: 0.35rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.milestone-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+.milestone-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.milestone-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--loop-border-subtle);
+  border-radius: 0.625rem;
+  padding: 0.6rem 0.85rem;
+  transition: all 0.15s;
+}
+
+.milestone-checkbox-row.done {
+  background: rgba(16, 185, 129, 0.05);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.milestone-check {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: #10b981;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.milestone-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  cursor: pointer;
+}
+
+.milestone-title {
+  font-size: 0.875rem;
+  color: var(--loop-text-primary);
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.milestone-title.text-completed {
+  color: var(--loop-text-muted);
+  text-decoration: line-through;
+}
+
+.done-tag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.add-milestone-inline {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.inline-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed var(--loop-border-subtle);
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.8rem;
+  color: var(--loop-text-primary);
+  outline: none;
+}
+
+.inline-input:focus {
+  border-color: var(--loop-accent);
+}
+
+.inline-add-btn {
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: var(--loop-accent);
+  padding: 0 0.85rem;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.inline-add-btn:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.25);
+}
+
+.inline-add-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Activity & Payment Thread Container */
+.thread-container {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.625rem;
+  padding: 0.75rem;
+  margin: 0.5rem 0;
+}
+
+.thread-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.thread-stream {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+  padding-left: 0.5rem;
+}
+
+.thread-stream::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 9px;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.thread-event {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  position: relative;
+  z-index: 1;
+}
+
+.thread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.thread-dot-create {
+  background: #6366f1;
+  box-shadow: 0 0 6px rgba(99, 102, 241, 0.6);
+}
+
+.thread-dot-done {
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+.thread-dot-pay {
+  background: #f59e0b;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+}
+
+.thread-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.thread-text {
+  font-size: 0.8rem;
+  color: #e2e8f0;
+  line-height: 1.35;
+}
+
+.thread-time {
+  font-size: 0.7rem;
+  color: #64748b;
+}
+
+/* Person Recurring Box */
+.person-recurring-box {
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  border-radius: 1rem;
+  padding: 0.75rem 1rem;
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.recurring-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.box-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #a5b4fc;
+}
+
+.recurring-box-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.person-rec-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.rec-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.rec-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.rec-meta {
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+.rec-right {
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+

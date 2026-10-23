@@ -21,12 +21,17 @@ import {
   keyOutline,
   trashOutline,
   createOutline,
+  syncOutline,
+  peopleOutline,
 } from 'ionicons/icons';
+import { ContactSyncModalComponent } from '../../components/contact-sync-modal/contact-sync-modal.component';
+import { RecurringPaymentsModalComponent } from '../../components/recurring-payments-modal/recurring-payments-modal.component';
+import { repeatOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule, IonIcon],
+  imports: [CommonModule, FormsModule, IonIcon, ContactSyncModalComponent, RecurringPaymentsModalComponent],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.css',
 })
@@ -38,6 +43,8 @@ export class SettingsComponent {
   isErrorStatus = signal<boolean>(false);
   isExportingBackup = signal<boolean>(false);
   isEditingPin = signal<boolean>(false);
+  showContactSync = signal<boolean>(false);
+  showRecurringPayments = signal<boolean>(false);
 
   constructor(
     public state: LoopStateService,
@@ -59,6 +66,9 @@ export class SettingsComponent {
       keyOutline,
       trashOutline,
       createOutline,
+      syncOutline,
+      peopleOutline,
+      repeatOutline,
     });
   }
 

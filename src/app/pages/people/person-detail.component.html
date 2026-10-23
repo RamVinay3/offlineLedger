@@ -92,6 +92,31 @@
           </a>
         }
       </div>
+
+      <!-- Linked Recurring Payments for this Person -->
+      @if (personRecurringPayments().length > 0) {
+        <div class="person-recurring-box animate-fade-in">
+          <div class="recurring-box-header">
+            <div class="box-title">
+              <ion-icon name="repeat-outline"></ion-icon>
+              <span>Recurring Commitments ({{ personRecurringPayments().length }})</span>
+            </div>
+          </div>
+          <div class="recurring-box-items">
+            @for (rec of personRecurringPayments(); track rec.id) {
+              <div class="person-rec-item">
+                <div class="rec-left">
+                  <span class="rec-title">{{ rec.title }}</span>
+                  <span class="rec-meta font-mono">{{ rec.frequency }} • Due: {{ rec.nextDueDate }}</span>
+                </div>
+                <div class="rec-right font-mono" [class.text-owed]="rec.direction === 'RECEIVE'" [class.text-owing]="rec.direction === 'PAY'">
+                  {{ rec.direction === 'PAY' ? '-' : '+' }}{{ rec.currency }}{{ rec.amount.toLocaleString() }}
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
     }
 
     <!-- Quick Add Action Row -->
@@ -107,6 +132,10 @@
       <button class="quick-btn" (click)="openFastEntry('LENT', 'ITEM')">
         <ion-icon name="cube-outline" class="text-item"></ion-icon>
         <span>Lend Item</span>
+      </button>
+      <button class="quick-btn" (click)="openFastEntry('LENT', 'COMMITMENT')">
+        <ion-icon name="checkbox-outline" class="text-service"></ion-icon>
+        <span>Service / Task</span>
       </button>
     </div>
 
@@ -134,7 +163,7 @@
         (click)="selectedTab.set('COMMITMENTS')"
       >
         <ion-icon name="checkbox-outline"></ion-icon>
-        <span>Commitments ({{ commitmentObligations().length }})</span>
+        <span>Services ({{ commitmentObligations().length }})</span>
       </button>
       <button
         class="tab-btn"
@@ -234,9 +263,31 @@
                         <span class="badge-pill badge-attention">Due {{ formatDate(ob.dueDate) }}</span>
                       }
                     }
+
+                    <!-- Due Date Reschedule / Missed History Counter -->
+                    @if (ob.dueDateChangeCount && ob.dueDateChangeCount > 0) {
+                      <button
+                        type="button"
+                        class="badge-pill badge-rescheduled"
+                        (click)="openChangeDueDate(ob)"
+                        title="Due date modified {{ ob.dueDateChangeCount }} times (tap to view history)"
+                      >
+                        ⚠️ Rescheduled {{ ob.dueDateChangeCount }}x
+                      </button>
+                    }
                   </div>
 
                   <div class="card-action-btns">
+                    <!-- Reschedule / Edit Due Date Button -->
+                    @if (ob.status !== 'COMPLETED') {
+                      <button
+                        class="tool-circle-btn cal-btn"
+                        (click)="openChangeDueDate(ob)"
+                        title="Reschedule / Change Due Date"
+                      >
+                        <ion-icon name="calendar-outline"></ion-icon>
+                      </button>
+                    }
                     @if (ob.status !== 'COMPLETED' && ob.direction === 'LENT') {
                       <button class="tool-circle-btn qr-btn" (click)="selectedObligationForQr.set(ob)" title="Show Payment QR">
                         <ion-icon name="qr-code-outline"></ion-icon>
@@ -305,9 +356,28 @@
                     @if (item.dueDate) {
                       <span class="due-text">Return by: {{ formatDate(item.dueDate) }}</span>
                     }
+                    @if (item.dueDateChangeCount && item.dueDateChangeCount > 0) {
+                      <button
+                        type="button"
+                        class="badge-pill badge-rescheduled"
+                        (click)="openChangeDueDate(item)"
+                        title="Return date rescheduled {{ item.dueDateChangeCount }} times"
+                      >
+                        ⚠️ Rescheduled {{ item.dueDateChangeCount }}x
+                      </button>
+                    }
                   </div>
 
                   <div class="card-action-btns">
+                    @if (item.status !== 'COMPLETED') {
+                      <button
+                        class="tool-circle-btn cal-btn"
+                        (click)="openChangeDueDate(item)"
+                        title="Reschedule Return Date"
+                      >
+                        <ion-icon name="calendar-outline"></ion-icon>
+                      </button>
+                    }
                     @if (item.status !== 'COMPLETED' && item.direction === 'LENT') {
                       <button class="tool-circle-btn chat-btn" (click)="selectedObligationForShare.set(item)" title="Send Reminder">
                         <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
@@ -328,7 +398,7 @@
       </div>
     }
 
-    <!-- TAB CONTENT: COMMITMENTS -->
+    <!-- TAB CONTENT: COMMITMENTS / SERVICES (Checkboxes & Milestone Threads) -->
     @if (selectedTab() === 'COMMITMENTS') {
       <div class="tab-pane">
         @if (commitmentObligations().length === 0) {
@@ -336,23 +406,36 @@
             <div class="empty-tab-icon">
               <ion-icon name="checkbox-outline"></ion-icon>
             </div>
-            <h4>No Pending Commitments</h4>
-            <p>No pending commitments with {{ currentPerson()?.name }}.</p>
+            <h4>No Services or Commitments</h4>
+            <p>Track multi-milestone commitments and services with interactive check boxes and linked repayments.</p>
             <button class="empty-tab-btn" (click)="openFastEntry('LENT', 'COMMITMENT')">
               <ion-icon name="add-outline"></ion-icon>
-              <span>Add Commitment</span>
+              <span>Add Service / Tasks</span>
             </button>
           </div>
         } @else {
           <div class="card-list">
             @for (c of commitmentObligations(); track c.id) {
-              <div class="ledger-item-card card-container">
+              <div class="ledger-item-card card-container service-card">
                 <div class="item-header">
-                  <span class="badge-pill badge-attention">Commitment</span>
-                  @if (c.status === 'COMPLETED') {
-                    <span class="badge-pill badge-neutral">✓ Done</span>
+                  <div class="direction-badge-wrap">
+                    <span class="badge-pill badge-attention">
+                      {{ c.type === 'SERVICE' ? 'Service Contract' : 'Commitment' }}
+                    </span>
+                    <span class="date-tag">{{ formatDate(c.createdAt) }}</span>
+                  </div>
+
+                  @if (c.amount > 0) {
+                    <div class="item-amount font-mono" [class.text-owed]="c.direction === 'LENT'" [class.text-owing]="c.direction === 'BORROWED'">
+                      {{ c.currency }}{{ c.remainingAmount.toLocaleString() }}
+                      <span class="amount-sub">fee</span>
+                    </div>
                   } @else {
-                    <span class="badge-pill badge-owed">Pending</span>
+                    @if (c.status === 'COMPLETED') {
+                      <span class="badge-pill badge-neutral">✓ All Done</span>
+                    } @else {
+                      <span class="badge-pill badge-owed">In Progress</span>
+                    }
                   }
                 </div>
 
@@ -361,23 +444,147 @@
                   <div class="item-desc">{{ c.description }}</div>
                 }
 
+                <!-- Milestone Progress Header -->
+                <div class="milestones-header">
+                  <span class="milestone-counter">
+                    {{ getCompletedCount(c) }} of {{ (c.commitmentList || []).length }} milestones fulfilled ({{ getCommitmentProgress(c) }}%)
+                  </span>
+                  <div class="milestone-progress-bar">
+                    <div class="milestone-progress-fill" [style.width.%]="getCommitmentProgress(c)"></div>
+                  </div>
+                </div>
+
+                <!-- Interactive Checkboxes List -->
+                <div class="milestone-checklist">
+                  @for (item of c.commitmentList; track item.id) {
+                    <div class="milestone-checkbox-row" [class.done]="item.status === 'COMPLETED'">
+                      <input
+                        type="checkbox"
+                        class="milestone-check"
+                        [id]="'check_' + item.id"
+                        [checked]="item.status === 'COMPLETED'"
+                        (change)="toggleCommitmentCheckbox(c, item, $event)"
+                      />
+                      <label [for]="'check_' + item.id" class="milestone-label">
+                        <span class="milestone-title" [class.text-completed]="item.status === 'COMPLETED'">
+                          {{ item.title }}
+                        </span>
+                        @if (item.status === 'COMPLETED') {
+                          <span class="done-tag">✓ Fulfilled</span>
+                        }
+                      </label>
+                    </div>
+                  }
+                </div>
+
+                <!-- Inline add milestone -->
+                @if (c.status !== 'COMPLETED') {
+                  <div class="add-milestone-inline">
+                    <input
+                      type="text"
+                      class="inline-input"
+                      placeholder="+ Add another milestone..."
+                      [(ngModel)]="newMilestoneInputs[c.id]"
+                      (keydown.enter)="addMilestoneToObligation(c.id)"
+                    />
+                    <button
+                      type="button"
+                      class="inline-add-btn"
+                      [disabled]="!newMilestoneInputs[c.id]?.trim()"
+                      (click)="addMilestoneToObligation(c.id)"
+                    >
+                      Add
+                    </button>
+                  </div>
+                }
+
+                <!-- Activity / Repayment Thread View (Thread Visualization) -->
+                @if (c.payments.length > 0 || (c.commitmentList && c.commitmentList!.length > 0)) {
+                  <div class="thread-container">
+                    <div class="thread-header">
+                      <ion-icon name="git-commit-outline"></ion-icon>
+                      <span>Activity & Payment Thread</span>
+                    </div>
+                    <div class="thread-stream">
+                      <div class="thread-event">
+                        <div class="thread-dot thread-dot-create"></div>
+                        <div class="thread-info">
+                          <span class="thread-text">Service created with {{ (c.commitmentList || []).length }} milestones</span>
+                          <span class="thread-time">{{ formatDate(c.createdAt) }}</span>
+                        </div>
+                      </div>
+
+                      @for (item of c.commitmentList; track item.id) {
+                        @if (item.status === 'COMPLETED') {
+                          <div class="thread-event">
+                            <div class="thread-dot thread-dot-done"></div>
+                            <div class="thread-info">
+                              <span class="thread-text">Milestone fulfilled: <strong>"{{ item.title }}"</strong></span>
+                              @if (item.completedAt) {
+                                <span class="thread-time">{{ formatDate(item.completedAt) }}</span>
+                              }
+                            </div>
+                          </div>
+                        }
+                      }
+
+                      @for (pmt of c.payments; track pmt.id) {
+                        <div class="thread-event">
+                          <div class="thread-dot thread-dot-pay"></div>
+                          <div class="thread-info">
+                            <span class="thread-text">
+                              💳 Payment recorded: <strong>{{ c.currency }}{{ pmt.amount.toLocaleString() }}</strong>
+                              @if (pmt.notes) { ({{ pmt.notes }}) }
+                            </span>
+                            <span class="thread-time">{{ formatDate(pmt.paymentDate) }}</span>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
                 <div class="item-footer">
                   <div class="due-info">
                     @if (c.dueDate) {
-                      <span>Due: {{ formatDate(c.dueDate) }}</span>
+                      <span>Target: {{ formatDate(c.dueDate) }}</span>
+                    }
+                    @if (c.dueDateChangeCount && c.dueDateChangeCount > 0) {
+                      <button
+                        type="button"
+                        class="badge-pill badge-rescheduled"
+                        (click)="openChangeDueDate(c)"
+                        title="Target date rescheduled {{ c.dueDateChangeCount }} times"
+                      >
+                        ⚠️ Rescheduled {{ c.dueDateChangeCount }}x
+                      </button>
                     }
                   </div>
 
                   <div class="card-action-btns">
+                    @if (c.status !== 'COMPLETED') {
+                      <button
+                        class="tool-circle-btn cal-btn"
+                        (click)="openChangeDueDate(c)"
+                        title="Reschedule Target Date"
+                      >
+                        <ion-icon name="calendar-outline"></ion-icon>
+                      </button>
+                    }
                     @if (c.status !== 'COMPLETED' && c.direction === 'LENT') {
                       <button class="tool-circle-btn chat-btn" (click)="selectedObligationForShare.set(c)" title="Send Reminder">
                         <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
                       </button>
                     }
-                    @if (c.status !== 'COMPLETED') {
+                    @if (c.amount > 0 && c.status !== 'COMPLETED') {
+                      <button class="btn-action-primary" (click)="openPaymentModal(c)">
+                        <ion-icon name="cash-outline"></ion-icon>
+                        <span>Add Payment</span>
+                      </button>
+                    } @else if (c.status !== 'COMPLETED') {
                       <button class="btn-action-done" (click)="completeCommitment(c)">
                         <ion-icon name="checkmark-circle-outline"></ion-icon>
-                        <span>Mark Done</span>
+                        <span>Complete All</span>
                       </button>
                     }
                   </div>
@@ -444,6 +651,24 @@
       (settled)="onSettled()"
       (closed)="showSettlementModal.set(false)"
     ></app-settlement-modal>
+  }
+
+  <!-- Edit Due Date Modal Overlay -->
+  @if (selectedObligationForDueDate()) {
+    <app-edit-due-date-modal
+      [obligation]="selectedObligationForDueDate()!"
+      (updated)="state.refreshAll()"
+      (closed)="selectedObligationForDueDate.set(null)"
+    ></app-edit-due-date-modal>
+  }
+
+  <!-- Commitment Fulfilled Payment Prompt Modal -->
+  @if (promptFulfilledItem()) {
+    <app-commitment-prompt-modal
+      [itemTitle]="promptFulfilledItem()!.title"
+      (recordPayment)="onRecordPaymentFromPrompt()"
+      (dismiss)="promptFulfilledItem.set(null)"
+    ></app-commitment-prompt-modal>
   }
 
   <!-- Share Friendly Reminder Modal -->

@@ -333,11 +333,60 @@
       </div>
     </section>
 
+    <!-- 5. Recurring Payments & Subscriptions -->
+    <section class="settings-group card-container">
+      <div class="group-header">
+        <ion-icon name="repeat-outline" class="group-icon"></ion-icon>
+        <h2>Recurring Payments & Subscriptions</h2>
+      </div>
+
+      <p class="section-desc">
+        Track rent, monthly subscriptions, loan EMIs, and cashflow with automatic reminders and cycle management.
+      </p>
+
+      <button class="btn-primary" (click)="showRecurringPayments.set(true)">
+        <ion-icon name="repeat-outline"></ion-icon>
+        <span>Manage Recurring ({{ state.activeRecurringPayments().length }} Active)</span>
+      </button>
+    </section>
+
+    <!-- 6. Contact Sync & Import -->
+    <section class="settings-group card-container">
+      <div class="group-header">
+        <ion-icon name="people-outline" class="group-icon"></ion-icon>
+        <h2>Contact Sync & Import</h2>
+      </div>
+
+      <p class="section-desc">
+        Import your device contacts or phone address book via vCard (.vcf) or CSV file with 100% offline privacy.
+      </p>
+
+      <button class="btn-primary" (click)="showContactSync.set(true)">
+        <ion-icon name="sync-outline"></ion-icon>
+        <span>Open Contact Sync Manager</span>
+      </button>
+    </section>
+
     <!-- About LOOP -->
     <div class="app-version-box">
-      <div class="app-version-title">LOOP v1.0.0 (Production)</div>
+      <div class="app-version-title">LOOP v2.0.0 (Offline)</div>
       <div class="app-version-sub">Offline Personal IOU & Lending Ledger</div>
       <div class="app-quote">“Never lose track of what you gave, borrowed, or owe.”</div>
     </div>
   </main>
+
+  <!-- Contact Sync Modal -->
+  @if (showContactSync()) {
+    <app-contact-sync-modal
+      (closed)="showContactSync.set(false)"
+      (imported)="state.refreshAll()"
+    ></app-contact-sync-modal>
+  }
+
+  <!-- Recurring Payments Modal -->
+  @if (showRecurringPayments()) {
+    <app-recurring-payments-modal
+      (closed)="showRecurringPayments.set(false)"
+    ></app-recurring-payments-modal>
+  }
 </div>

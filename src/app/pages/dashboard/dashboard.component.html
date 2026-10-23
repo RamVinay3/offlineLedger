@@ -6,6 +6,17 @@
       <span class="tagline">Personal Ledger</span>
     </div>
     <div class="header-right">
+      <button class="add-recurring-quick-btn" (click)="openRecurringManager()" title="Recurring Payments & Subscriptions">
+        <ion-icon name="repeat-outline"></ion-icon>
+        <span>Recurring</span>
+        @if (state.dueSoonRecurringPayments().length > 0) {
+          <span class="badge-mini-count">{{ state.dueSoonRecurringPayments().length }}</span>
+        }
+      </button>
+      <button class="add-reminder-quick-btn" (click)="openFastEntryWithType('REMINDER')" title="Add One-Time Reminder">
+        <ion-icon name="alarm-outline"></ion-icon>
+        <span>+ Reminder</span>
+      </button>
       <span class="offline-pill">
         <ion-icon name="shield-checkmark-outline"></ion-icon>
         100% Offline
@@ -76,6 +87,155 @@
       </div>
     }
 
+    <!-- RECURRING PAYMENTS SECTION (Subscriptions, Rent, EMI, Regular cashflows) -->
+    @if (state.activeRecurringPayments().length > 0) {
+      <section class="recurring-section">
+        <div class="section-title-wrap between">
+          <div class="title-with-icon">
+            <ion-icon name="repeat-outline" class="recurring-section-icon"></ion-icon>
+            <h2 class="section-title">
+              Recurring Payments
+              <span class="count-badge">({{ state.activeRecurringPayments().length }})</span>
+            </h2>
+          </div>
+          <div class="actions-group">
+            <button class="section-action-btn secondary" (click)="openRecurringManager()" title="Manage all recurring">
+              <span>Manage</span>
+            </button>
+            <button class="section-action-btn" (click)="openFastEntryWithType('RECURRING')" title="Add Recurring Payment">
+              <ion-icon name="add-outline"></ion-icon>
+              <span>Add</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Monthly Projection Summary Bar -->
+        <div class="recurring-projection-pill">
+          <span>Est. Outflow:</span>
+          <span class="proj-outflow-val font-mono">
+            -{{ state.settings().currencySymbol }}{{ state.recurringFinancialSummary().monthlyOutflow.toLocaleString() }}/mo
+          </span>
+          @if (state.recurringFinancialSummary().monthlyInflow > 0) {
+            <span class="sep">•</span>
+            <span>Inflow:</span>
+            <span class="proj-inflow-val font-mono">
+              +{{ state.settings().currencySymbol }}{{ state.recurringFinancialSummary().monthlyInflow.toLocaleString() }}/mo
+            </span>
+          }
+        </div>
+
+        <!-- Cards of Due / Upcoming Recurring -->
+        <div class="recurring-cards-grid">
+          @for (r of (state.dueSoonRecurringPayments().length > 0 ? state.dueSoonRecurringPayments() : state.activeRecurringPayments().slice(0, 3)); track r.id) {
+            <div class="recurring-dash-card card-interactive">
+              <div class="dash-card-header">
+                <div class="dash-cat-wrap" [class.receive]="r.direction === 'RECEIVE'">
+                  <ion-icon [name]="getRecurringCatIcon(r.category)"></ion-icon>
+                </div>
+                <div class="dash-title-wrap">
+                  <div class="dash-title-line">
+                    <span class="dash-title">{{ r.title }}</span>
+                    @if (r.personName) {
+                      <span class="dash-person-pill">{{ r.personName }}</span>
+                    }
+                  </div>
+                  <div class="dash-freq-line">
+                    <span class="freq-pill">{{ r.frequency }}</span>
+                    <span class="due-badge font-mono" [class]="getRecurringDueBadge(r.nextDueDate).cls">
+                      {{ getRecurringDueBadge(r.nextDueDate).label }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="dash-card-body">
+                <div class="dash-amount font-mono" [class.text-owing]="r.direction === 'PAY'" [class.text-owed]="r.direction === 'RECEIVE'">
+                  {{ r.direction === 'PAY' ? '-' : '+' }}{{ r.currency }}{{ r.amount.toLocaleString() }}
+                </div>
+                <div class="dash-actions">
+                  <button
+                    type="button"
+                    class="dash-btn-paid"
+                    (click)="markRecurringPaid(r)"
+                    title="Mark paid and advance to next due date"
+                  >
+                    <ion-icon name="checkmark-circle"></ion-icon>
+                    <span>Mark Paid</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="dash-btn-skip"
+                    (click)="skipRecurringCycle(r)"
+                    title="Skip this cycle"
+                  >
+                    <span>Skip</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- ONE-TIME REMINDERS SECTION (Interviews, Bills, Errand tasks - No person required!) -->
+    @if (state.activeStandaloneReminders().length > 0) {
+      <section class="reminders-section">
+        <div class="section-title-wrap between">
+          <div class="title-with-icon">
+            <ion-icon name="alarm-outline" class="reminder-section-icon"></ion-icon>
+            <h2 class="section-title">
+              One-Time Reminders
+              <span class="count-badge">({{ state.activeStandaloneReminders().length }})</span>
+            </h2>
+          </div>
+          <button class="section-action-btn" (click)="openFastEntryWithType('REMINDER')">
+            <ion-icon name="add-outline"></ion-icon>
+            <span>Add</span>
+          </button>
+        </div>
+
+        <div class="reminders-list">
+          @for (r of state.activeStandaloneReminders(); track r.id) {
+            <div class="reminder-item card-interactive">
+              <input
+                type="checkbox"
+                class="reminder-checkbox"
+                [id]="'rem_' + r.id"
+                [checked]="r.isCompleted"
+                (change)="toggleStandaloneReminder(r, $event)"
+              />
+              <label [for]="'rem_' + r.id" class="reminder-content">
+                <div class="reminder-top-row">
+                  <span class="reminder-title">{{ r.title }}</span>
+                  <span class="reminder-cat-pill">
+                    <ion-icon [name]="getCategoryIcon(r.category)"></ion-icon>
+                    <span>{{ r.category }}</span>
+                  </span>
+                </div>
+                <div class="reminder-meta-row">
+                  <span class="reminder-time font-mono">
+                    ⏰ {{ formatReminderDate(r.reminderDate) }}
+                  </span>
+                  @if (r.notes) {
+                    <span class="reminder-notes">{{ r.notes }}</span>
+                  }
+                </div>
+              </label>
+              <button
+                type="button"
+                class="delete-reminder-btn"
+                (click)="deleteStandaloneReminder(r)"
+                title="Delete Reminder"
+              >
+                <ion-icon name="trash-outline"></ion-icon>
+              </button>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
     <!-- NEEDS ATTENTION SECTION -->
     @if (state.needsAttentionObligations().length > 0) {
       <section class="attention-section">
@@ -91,7 +251,7 @@
               <div class="attention-info">
                 <div class="attention-title-line">
                   <span class="attention-person">{{ ob.personName }}</span>
-                  @if (ob.type === 'MONEY') {
+                  @if (ob.type === 'MONEY' || ob.type === 'SERVICE') {
                     <span class="attention-amount font-mono">
                       {{ ob.currency }}{{ ob.remainingAmount.toLocaleString() }}
                     </span>
@@ -104,6 +264,9 @@
                     <span class="badge-pill badge-owing">🔴 Overdue</span>
                   } @else {
                     <span class="badge-pill badge-attention">🟡 Due Soon ({{ formatDate(ob.dueDate!) }})</span>
+                  }
+                  @if (ob.dueDateChangeCount && ob.dueDateChangeCount > 0) {
+                    <span class="badge-pill badge-rescheduled">⚠️ Rescheduled {{ ob.dueDateChangeCount }}x</span>
                   }
                   <span class="direction-tag">
                     {{ ob.direction === 'LENT' ? 'They owe you' : 'You owe them' }}
@@ -174,7 +337,7 @@
             <p>
               All tabs, loans, and items are settled. Tap below to record a new loan or obligation.
             </p>
-            <button class="btn-primary" (click)="showFastEntry.set(true)">
+            <button class="btn-primary" (click)="openFastEntryWithType('MONEY')">
               <ion-icon name="add-outline"></ion-icon>
               Add Active Obligation
             </button>
@@ -199,6 +362,9 @@
                       } @else if (ob.type === 'ITEM') {
                         <ion-icon name="cube-outline"></ion-icon>
                         <span>{{ ob.direction === 'LENT' ? 'Item Lent' : 'Item Borrowed' }}</span>
+                      } @else if (ob.type === 'SERVICE') {
+                        <ion-icon name="checkbox-outline"></ion-icon>
+                        <span>Service</span>
                       } @else {
                         <ion-icon name="checkbox-outline"></ion-icon>
                         <span>Commitment</span>
@@ -209,7 +375,7 @@
 
                 <!-- Right Amount / Status -->
                 <div class="ob-amount-area">
-                  @if (ob.type === 'MONEY') {
+                  @if (ob.type === 'MONEY' || (ob.type === 'SERVICE' && ob.amount > 0)) {
                     <div
                       class="amount-display font-mono"
                       [class.text-owed]="ob.direction === 'LENT'"
@@ -224,7 +390,7 @@
                     }
                   } @else {
                     <span class="badge-pill" [class.badge-item]="ob.status !== 'COMPLETED'" [class.badge-neutral]="ob.status === 'COMPLETED'">
-                      {{ ob.status === 'COMPLETED' ? 'Returned' : 'Active' }}
+                      {{ ob.status === 'COMPLETED' ? (ob.type === 'ITEM' ? 'Returned' : 'Fulfilled') : 'Active' }}
                     </span>
                   }
                 </div>
@@ -238,8 +404,31 @@
                 }
               </div>
 
-              <!-- Partial Payment Progress Bar for Money -->
-              @if (ob.type === 'MONEY' && ob.amount > 0 && ob.status !== 'CANCELLED') {
+              <!-- Interactive Milestone Checkboxes for Commitments / Services -->
+              @if ((ob.type === 'COMMITMENT' || ob.type === 'SERVICE') && ob.commitmentList && ob.commitmentList!.length > 0) {
+                <div class="dash-checklist" (click)="$event.stopPropagation()">
+                  @for (item of ob.commitmentList; track item.id) {
+                    <div class="dash-check-row">
+                      <input
+                        type="checkbox"
+                        class="milestone-check"
+                        [id]="'dash_check_' + item.id"
+                        [checked]="item.status === 'COMPLETED'"
+                        (change)="toggleCommitmentCheckbox(ob, item, $event)"
+                      />
+                      <label [for]="'dash_check_' + item.id" class="dash-check-label" [class.done]="item.status === 'COMPLETED'">
+                        <span>{{ item.title }}</span>
+                        @if (item.status === 'COMPLETED') {
+                          <span class="done-tag">✓ Done</span>
+                        }
+                      </label>
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- Partial Payment Progress Bar for Money & Services -->
+              @if ((ob.type === 'MONEY' || ob.type === 'SERVICE') && ob.amount > 0 && ob.status !== 'CANCELLED') {
                 <div class="progress-bar-container">
                   <div
                     class="progress-fill"
@@ -264,10 +453,33 @@
                   } @else {
                     <span class="no-due">No due date</span>
                   }
+
+                  <!-- Rescheduled Count Badge -->
+                  @if (ob.dueDateChangeCount && ob.dueDateChangeCount > 0) {
+                    <button
+                      type="button"
+                      class="badge-pill badge-rescheduled"
+                      (click)="$event.stopPropagation(); openChangeDueDate(ob)"
+                      title="Due date modified {{ ob.dueDateChangeCount }} times"
+                    >
+                      ⚠️ Rescheduled {{ ob.dueDateChangeCount }}x
+                    </button>
+                  }
                 </div>
 
                 <div class="footer-actions" (click)="$event.stopPropagation()">
-                  <!-- Quick Tool Circular Buttons (QR, Call & Reminder) -->
+                  <!-- Reschedule Due Date Button -->
+                  @if (ob.status !== 'COMPLETED') {
+                    <button
+                      class="tool-circle-btn cal-btn"
+                      (click)="openChangeDueDate(ob)"
+                      title="Reschedule Due Date"
+                    >
+                      <ion-icon name="calendar-outline"></ion-icon>
+                    </button>
+                  }
+
+                  <!-- Quick Tool Circular Buttons (QR & Reminder) -->
                   @if (ob.status !== 'COMPLETED' && ob.direction === 'LENT') {
                     @if (ob.type === 'MONEY') {
                       <button
@@ -287,8 +499,8 @@
                     </button>
                   }
 
-                  <!-- Primary Action Button with Rich Styling -->
-                  @if (ob.type === 'MONEY' && ob.status !== 'COMPLETED') {
+                  <!-- Primary Action Button -->
+                  @if ((ob.type === 'MONEY' || (ob.type === 'SERVICE' && ob.amount > 0)) && ob.status !== 'COMPLETED') {
                     <button
                       class="btn-action-primary"
                       (click)="openPaymentModal(ob)"
@@ -325,6 +537,7 @@
   <!-- Fast Entry Modal Overlay -->
   @if (showFastEntry()) {
     <app-fast-entry-modal
+      [initialType]="fastEntryInitialType()"
       (saved)="onFastEntrySaved()"
       (closed)="showFastEntry.set(false)"
     ></app-fast-entry-modal>
@@ -337,6 +550,24 @@
       (paymentRecorded)="onPaymentRecorded()"
       (closed)="selectedObligationForPayment.set(null)"
     ></app-payment-modal>
+  }
+
+  <!-- Edit Due Date Modal Overlay -->
+  @if (selectedObligationForDueDate()) {
+    <app-edit-due-date-modal
+      [obligation]="selectedObligationForDueDate()!"
+      (updated)="state.refreshAll()"
+      (closed)="selectedObligationForDueDate.set(null)"
+    ></app-edit-due-date-modal>
+  }
+
+  <!-- Commitment Fulfilled Payment Prompt Modal -->
+  @if (promptFulfilledItem()) {
+    <app-commitment-prompt-modal
+      [itemTitle]="promptFulfilledItem()!.title"
+      (recordPayment)="onRecordPaymentFromPrompt()"
+      (dismiss)="promptFulfilledItem.set(null)"
+    ></app-commitment-prompt-modal>
   }
 
   <!-- Share Friendly Reminder Modal -->
@@ -357,5 +588,13 @@
       (closed)="selectedObligationForQr.set(null)"
       (upiIdSaved)="state.updateSettings({ upiId: $event })"
     ></app-upi-qr-modal>
+  }
+
+  <!-- Recurring Payments Manager Modal Overlay -->
+  @if (showRecurringModal()) {
+    <app-recurring-payments-modal
+      (openAddRecurring)="openFastEntryWithType('RECURRING')"
+      (closed)="showRecurringModal.set(false)"
+    ></app-recurring-payments-modal>
   }
 </div>
