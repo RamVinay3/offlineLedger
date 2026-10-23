@@ -115,33 +115,14 @@ END:VCARD`;
       email: 'kavita@example.com',
     };
 
-    const mockClick = vi.fn();
-    const mockAppendChild = vi.fn();
-    const mockRemoveChild = vi.fn();
-
-    const mockAnchor = {
-      href: '',
-      download: '',
-      click: mockClick,
-    };
-
-    (globalThis as any).window = globalThis;
-    (globalThis as any).document = {
-      createElement: vi.fn().mockReturnValue(mockAnchor),
-      body: {
-        appendChild: mockAppendChild,
-        removeChild: mockRemoveChild,
-      },
-    };
-    (globalThis as any).URL = {
-      createObjectURL: vi.fn().mockReturnValue('blob:http://localhost/mock-vcf'),
-      revokeObjectURL: vi.fn(),
-    };
+    const downloadSpy = vi
+      .spyOn(service as any, 'triggerVCardDownload')
+      .mockImplementation(() => {});
 
     const result = await service.saveToDeviceContacts(person);
 
     expect(result.success).toBe(true);
     expect(result.method).toBe('download');
-    expect(mockClick).toHaveBeenCalled();
+    expect(downloadSpy).toHaveBeenCalled();
   });
 });

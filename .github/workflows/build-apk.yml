@@ -61,22 +61,22 @@ jobs:
 
       - name: Prepare APK for Direct Download
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk LOOP-v1.0.2.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk LOOP-v1.0.3.apk
           cp android/app/build/outputs/apk/debug/app-debug.apk LOOP.apk
 
       - name: Publish Direct Public Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.2
-          name: LOOP v1.0.2 (Android - Consistent Signing & Safe Area)
+          tag_name: v1.0.3
+          name: LOOP v1.0.3 (Decluttered Dashboard & Two-Way Contact Sync)
           body: |
-            ### LOOP v1.0.2 — Offline Personal Ledger
-            - Consistent release key signing (seamless in-place updates)
-            - Fixed Android status bar collision with edge-to-edge safe area insets
-            - Dynamic theme matching for system status bar
+            ### LOOP v1.0.3 — Offline Personal Ledger
+            - Decluttered top-right header with sleek circular horizontal action buttons for Recurring and Reminders
+            - Two-Way Contact Sync: Pick from phone contacts and save directly to phone contacts (.vcf)
+            - Fixed CI test execution and updated Android build version
             
             **Direct Download:**
-            - **[Download LOOP-v1.0.2.apk](https://github.com/RamVinay3/offlineLedger/releases/download/v1.0.2/LOOP-v1.0.2.apk)**
+            - **[Download LOOP-v1.0.3.apk](https://github.com/RamVinay3/offlineLedger/releases/download/v1.0.3/LOOP-v1.0.3.apk)**
           files: |
-            LOOP-v1.0.2.apk
+            LOOP-v1.0.3.apk
             LOOP.apk
