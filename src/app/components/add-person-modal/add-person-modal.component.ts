@@ -76,11 +76,17 @@ export class AddPersonModalComponent implements OnInit {
 
   async pickFromDevice(): Promise<void> {
     this.contactImportNotice.set('');
-    if (this.contactSync.isNativeContactPickerSupported()) {
+    const status = this.contactSync.getContactPickerSupportStatus();
+
+    if (status.supported) {
       try {
         this.isPickingContact.set(true);
         const contact = await this.contactSync.pickSingleNativeContact();
-        if (!contact) return;
+        if (!contact) {
+          this.contactImportNotice.set('No contact was selected.');
+          setTimeout(() => this.contactImportNotice.set(''), 3000);
+          return;
+        }
         this.applyImportedContact(contact.name, contact.phoneNumber, contact.email, contact.notes);
       } catch (e: any) {
         this.contactImportNotice.set(e.message || 'Could not access device contacts.');
@@ -88,9 +94,13 @@ export class AddPersonModalComponent implements OnInit {
         this.isPickingContact.set(false);
       }
     } else {
-      // If native picker not supported, open file picker for .vcf
+      this.contactImportNotice.set(
+        status.reason || 'Native contact picker is not available on this browser/connection. Opening file import...'
+      );
       const fileInput = document.getElementById('vcfQuickInput') as HTMLInputElement;
-      if (fileInput) fileInput.click();
+      if (fileInput) {
+        setTimeout(() => fileInput.click(), 500);
+      }
     }
   }
 

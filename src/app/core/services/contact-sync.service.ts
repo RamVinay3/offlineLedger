@@ -24,6 +24,30 @@ export class ContactSyncService {
   }
 
   /**
+   * Detailed check for contact picker support with diagnostic reason
+   */
+  getContactPickerSupportStatus(): { supported: boolean; reason?: string } {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+      return { supported: false, reason: 'Environment does not support contacts.' };
+    }
+    if (typeof window.isSecureContext === 'boolean' && !window.isSecureContext) {
+      return {
+        supported: false,
+        reason:
+          'Device Contacts Picker requires a Secure Context (HTTPS or localhost). If connecting over Wi-Fi, open via https:// or use the .vcf contact file import.',
+      };
+    }
+    if (!('contacts' in navigator) || typeof (navigator as any).contacts?.select !== 'function') {
+      return {
+        supported: false,
+        reason:
+          'Contact Picker API is available in Chrome for Android (v80+). You can import contacts universally using a .vcf contact card file.',
+      };
+    }
+    return { supported: true };
+  }
+
+  /**
    * Determine supported contact properties safely using getProperties()
    */
   private async getSupportedProperties(): Promise<string[]> {
@@ -44,19 +68,35 @@ export class ContactSyncService {
     return defaultProps;
   }
 
+  private async executeNativeSelect(properties: string[], multiple: boolean): Promise<any[]> {
+    try {
+      return await (navigator as any).contacts.select(properties, { multiple });
+    } catch (e: any) {
+      if (e?.name === 'AbortError') throw e;
+      // If error might be due to properties, try basic properties
+      if (properties.includes('email')) {
+        try {
+          return await (navigator as any).contacts.select(['name', 'tel'], { multiple });
+        } catch (inner: any) {
+          if (inner?.name === 'AbortError') throw inner;
+        }
+      }
+      return await (navigator as any).contacts.select(['name'], { multiple });
+    }
+  }
+
   /**
    * Open the native contact picker dialog on supported devices (Android Chrome, iOS Safari 14.5+)
    */
   async pickFromNativeContacts(): Promise<DeviceContact[]> {
-    if (!this.isNativeContactPickerSupported()) {
-      throw new Error('Device Contacts Picker API is not supported on this platform/browser.');
+    const status = this.getContactPickerSupportStatus();
+    if (!status.supported) {
+      throw new Error(status.reason || 'Device Contacts Picker API is not supported on this platform/browser.');
     }
 
     try {
       const props = await this.getSupportedProperties();
-      const contacts = await (navigator as any).contacts.select(props, {
-        multiple: true,
-      });
+      const contacts = await this.executeNativeSelect(props, true);
 
       return (contacts || []).map((c: any) => {
         const name = Array.isArray(c.name) ? c.name[0] : c.name || 'Unnamed Contact';
@@ -82,15 +122,14 @@ export class ContactSyncService {
    * Pick a single contact from the device address book (for Add Person modal)
    */
   async pickSingleNativeContact(): Promise<DeviceContact | null> {
-    if (!this.isNativeContactPickerSupported()) {
-      throw new Error('Device Contacts Picker is not supported on this browser/device.');
+    const status = this.getContactPickerSupportStatus();
+    if (!status.supported) {
+      throw new Error(status.reason || 'Device Contacts Picker is not supported on this browser/device.');
     }
 
     try {
       const props = await this.getSupportedProperties();
-      const contacts = await (navigator as any).contacts.select(props, {
-        multiple: false,
-      });
+      const contacts = await this.executeNativeSelect(props, false);
 
       if (!contacts || contacts.length === 0) {
         return null;
