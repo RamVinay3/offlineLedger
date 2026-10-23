@@ -2,10 +2,19 @@ import { Component, signal, output, input, OnInit, effect } from '@angular/core'
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LoopStateService } from '../../core/state/loop-state.service';
+import { ContactSyncService } from '../../core/services/contact-sync.service';
 import { Person } from '../../core/models';
 import { IonIcon } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { closeOutline, personAddOutline, createOutline, alertCircleOutline } from 'ionicons/icons';
+import {
+  closeOutline,
+  personAddOutline,
+  createOutline,
+  alertCircleOutline,
+  phonePortraitOutline,
+  cloudUploadOutline,
+  checkmarkCircleOutline,
+} from 'ionicons/icons';
 
 @Component({
   selector: 'app-add-person-modal',
@@ -24,11 +33,25 @@ export class AddPersonModalComponent implements OnInit {
   phoneNumber = '';
   email = '';
   notes = '';
+  saveToPhoneContacts = true;
   duplicateWarning = signal<string>('');
+  contactImportNotice = signal<string>('');
   isSubmitting = signal<boolean>(false);
+  isPickingContact = signal<boolean>(false);
 
-  constructor(private state: LoopStateService) {
-    addIcons({ closeOutline, personAddOutline, createOutline, alertCircleOutline });
+  constructor(
+    private state: LoopStateService,
+    public contactSync: ContactSyncService
+  ) {
+    addIcons({
+      closeOutline,
+      personAddOutline,
+      createOutline,
+      alertCircleOutline,
+      phonePortraitOutline,
+      cloudUploadOutline,
+      checkmarkCircleOutline,
+    });
 
     effect(() => {
       const p = this.personToEdit();
@@ -49,6 +72,58 @@ export class AddPersonModalComponent implements OnInit {
       this.email = p.email || '';
       this.notes = p.notes || '';
     }
+  }
+
+  async pickFromDevice(): Promise<void> {
+    this.contactImportNotice.set('');
+    if (this.contactSync.isNativeContactPickerSupported()) {
+      try {
+        this.isPickingContact.set(true);
+        const contact = await this.contactSync.pickSingleNativeContact();
+        if (!contact) return;
+        this.applyImportedContact(contact.name, contact.phoneNumber, contact.email, contact.notes);
+      } catch (e: any) {
+        this.contactImportNotice.set(e.message || 'Could not access device contacts.');
+      } finally {
+        this.isPickingContact.set(false);
+      }
+    } else {
+      // If native picker not supported, open file picker for .vcf
+      const fileInput = document.getElementById('vcfQuickInput') as HTMLInputElement;
+      if (fileInput) fileInput.click();
+    }
+  }
+
+  async onVcfPicked(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    try {
+      const text = await file.text();
+      const contacts = this.contactSync.parseVCard(text);
+      if (contacts.length > 0) {
+        const c = contacts[0];
+        this.applyImportedContact(c.name, c.phoneNumber, c.email, c.notes);
+        input.value = '';
+      } else {
+        this.contactImportNotice.set('No contact details found in file.');
+      }
+    } catch {
+      this.contactImportNotice.set('Failed to read contact file.');
+    }
+  }
+
+  private applyImportedContact(name: string, phone?: string, email?: string, notes?: string): void {
+    this.name = name;
+    if (phone) {
+      const digits = phone.replace(/\D/g, '').slice(-10);
+      this.phoneNumber = digits;
+    }
+    if (email) this.email = email;
+    if (notes && !this.notes) this.notes = notes;
+    this.checkDuplicate();
+    this.contactImportNotice.set(`Loaded details for "${name}"`);
+    setTimeout(() => this.contactImportNotice.set(''), 4000);
   }
 
   checkDuplicate(): void {
@@ -74,7 +149,6 @@ export class AddPersonModalComponent implements OnInit {
     if (allowedKeys.includes(event.key)) {
       return;
     }
-    // Block non-digit or entry beyond 10 digits
     if (!/^\d$/.test(event.key) || this.phoneNumber.length >= 10) {
       event.preventDefault();
     }
@@ -125,9 +199,24 @@ export class AddPersonModalComponent implements OnInit {
         this.personCreated.emit(person);
       }
 
+      // If phone number is present and save to contacts is checked, trigger device save
+      if (this.saveToPhoneContacts && personData.phoneNumber) {
+        try {
+          await this.contactSync.saveToDeviceContacts(personData);
+        } catch {
+          // Non-blocking
+        }
+      }
+
       this.onClose();
     } finally {
       this.isSubmitting.set(false);
+    }
+  }
+
+  onBackdropClick(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.onClose();
     }
   }
 

@@ -20,6 +20,7 @@ import { UpiQrModalComponent } from '../../components/upi-qr-modal/upi-qr-modal.
 import { AddPersonModalComponent } from '../../components/add-person-modal/add-person-modal.component';
 import { EditDueDateModalComponent } from '../../components/edit-due-date-modal/edit-due-date-modal.component';
 import { CommitmentPromptModalComponent } from '../../components/commitment-prompt-modal/commitment-prompt-modal.component';
+import { ContactSyncService } from '../../core/services/contact-sync.service';
 import { IonIcon } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
@@ -48,6 +49,7 @@ import {
   ellipseOutline,
   gitCommitOutline,
   repeatOutline,
+  personAddOutline,
 } from 'ionicons/icons';
 
 @Component({
@@ -156,11 +158,14 @@ export class PersonDetailComponent implements OnInit {
     return this.state.activities().filter((a) => a.personId === id);
   });
 
+  contactSavedFeedback = signal<string>('');
+
   constructor(
     public state: LoopStateService,
     private route: ActivatedRoute,
     private router: Router,
-    private location: Location
+    private location: Location,
+    private contactSync: ContactSyncService
   ) {
     addIcons({
       arrowBackOutline,
@@ -187,7 +192,27 @@ export class PersonDetailComponent implements OnInit {
       checkmarkCircle,
       ellipseOutline,
       gitCommitOutline,
+      repeatOutline,
+      personAddOutline,
     });
+  }
+
+  async savePersonToContacts(): Promise<void> {
+    const p = this.currentPerson();
+    if (!p || !p.phoneNumber) return;
+
+    try {
+      const res = await this.contactSync.saveToDeviceContacts(p);
+      if (res.method === 'download') {
+        this.contactSavedFeedback.set(`Contact card (.vcf) downloaded for ${p.name}. Tap to save to phone.`);
+      } else {
+        this.contactSavedFeedback.set(`Saved "${p.name}" to phone contacts!`);
+      }
+      setTimeout(() => this.contactSavedFeedback.set(''), 4500);
+    } catch {
+      this.contactSavedFeedback.set('Could not export contact.');
+      setTimeout(() => this.contactSavedFeedback.set(''), 3000);
+    }
   }
 
   getWhatsAppUrl(phoneNumber?: string): string {

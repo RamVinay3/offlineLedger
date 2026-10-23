@@ -1,4 +1,4 @@
-<div class="modal-backdrop animate-fade-in" (click)="onClose()">
+<div class="modal-backdrop animate-fade-in" (click)="onBackdropClick($event)">
   <div class="modal-dialog card-container" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <div class="title-wrap">
@@ -9,6 +9,41 @@
         <ion-icon name="close-outline"></ion-icon>
       </button>
     </div>
+
+    <!-- Quick Contact Picker Toolbar (when creating a new person) -->
+    @if (!personToEdit()) {
+      <div class="quick-import-bar">
+        <button
+          type="button"
+          class="quick-import-btn"
+          (click)="pickFromDevice()"
+          [disabled]="isPickingContact()"
+          title="Pick directly from your phone address book"
+        >
+          <ion-icon name="phone-portrait-outline"></ion-icon>
+          <span>Pick from Phone Contacts</span>
+        </button>
+
+        <label class="quick-vcf-btn" title="Import from contact card (.vcf file)">
+          <input
+            id="vcfQuickInput"
+            type="file"
+            accept=".vcf,.vcard"
+            class="hidden-file-input"
+            (change)="onVcfPicked($event)"
+          />
+          <ion-icon name="cloud-upload-outline"></ion-icon>
+          <span>.vcf File</span>
+        </label>
+      </div>
+
+      @if (contactImportNotice()) {
+        <div class="contact-notice-banner animate-fade-in">
+          <ion-icon name="checkmark-circle-outline"></ion-icon>
+          <span>{{ contactImportNotice() }}</span>
+        </div>
+      }
+    }
 
     <form (ngSubmit)="savePerson()" class="modal-form">
       <div class="form-group">
@@ -53,6 +88,27 @@
           <span class="phone-hint">{{ 10 - phoneNumber.length }} more digit(s) needed</span>
         }
       </div>
+
+      <!-- Save to Phone Contacts Option (when phone number is entered) -->
+      @if (phoneNumber && phoneNumber.length >= 7) {
+        <div class="save-contact-option animate-fade-in">
+          <label class="sync-checkbox-label">
+            <input
+              type="checkbox"
+              class="custom-check"
+              [(ngModel)]="saveToPhoneContacts"
+              name="saveToPhoneContacts"
+            />
+            <div class="checkbox-text">
+              <span class="checkbox-title">
+                <ion-icon name="phone-portrait-outline"></ion-icon>
+                Save to Phone Contacts
+              </span>
+              <span class="checkbox-desc">Exports contact card (.vcf) directly to your device</span>
+            </div>
+          </label>
+        </div>
+      }
 
       <div class="form-group">
         <label for="personEmail">Email (Optional)</label>

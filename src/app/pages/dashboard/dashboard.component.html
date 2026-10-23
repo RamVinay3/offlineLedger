@@ -6,21 +6,33 @@
       <span class="tagline">Personal Ledger</span>
     </div>
     <div class="header-right">
-      <button class="add-recurring-quick-btn" (click)="openRecurringManager()" title="Recurring Payments & Subscriptions">
+      <!-- Quick Recurring Button -->
+      <button
+        type="button"
+        class="header-circle-btn recurring-btn"
+        (click)="openRecurringManager()"
+        title="Recurring Payments & Subscriptions"
+        aria-label="Recurring Payments"
+      >
         <ion-icon name="repeat-outline"></ion-icon>
-        <span>Recurring</span>
         @if (state.dueSoonRecurringPayments().length > 0) {
-          <span class="badge-mini-count">{{ state.dueSoonRecurringPayments().length }}</span>
+          <span class="header-badge-count">{{ state.dueSoonRecurringPayments().length }}</span>
         }
       </button>
-      <button class="add-reminder-quick-btn" (click)="openFastEntryWithType('REMINDER')" title="Add One-Time Reminder">
+
+      <!-- Quick Add Reminder Button -->
+      <button
+        type="button"
+        class="header-circle-btn reminder-btn"
+        (click)="openFastEntryWithType('REMINDER')"
+        title="Quick Add Reminder"
+        aria-label="Add Reminder"
+      >
         <ion-icon name="alarm-outline"></ion-icon>
-        <span>+ Reminder</span>
+        @if (state.activeStandaloneReminders().length > 0) {
+          <span class="header-badge-dot"></span>
+        }
       </button>
-      <span class="offline-pill">
-        <ion-icon name="shield-checkmark-outline"></ion-icon>
-        100% Offline
-      </span>
     </div>
   </header>
 

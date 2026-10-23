@@ -190,6 +190,34 @@
   border-style: solid;
 }
 
+.contact-pill.save-contact-pill {
+  color: #818cf8;
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.08);
+}
+.contact-pill.save-contact-pill ion-icon {
+  color: #818cf8;
+}
+.contact-pill.save-contact-pill:hover {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: #818cf8;
+  color: #ffffff;
+}
+
+.contact-feedback-toast {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34d399;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: 0.625rem;
+  margin-top: -0.5rem;
+}
+
 .ledger-content {
   padding: 1.125rem;
   max-width: 48rem;

@@ -84,6 +84,15 @@
             <ion-icon name="logo-whatsapp"></ion-icon>
             <span>WhatsApp</span>
           </a>
+          <button
+            type="button"
+            class="contact-pill save-contact-pill"
+            (click)="savePersonToContacts()"
+            title="Save {{ currentPerson()!.name }} to your phone address book"
+          >
+            <ion-icon name="person-add-outline"></ion-icon>
+            <span>Save to Contacts</span>
+          </button>
         }
         @if (currentPerson()?.email) {
           <a [href]="'mailto:' + currentPerson()!.email" class="contact-pill mail-pill" [title]="'Email ' + currentPerson()!.email">
@@ -92,6 +101,13 @@
           </a>
         }
       </div>
+
+      @if (contactSavedFeedback()) {
+        <div class="contact-feedback-toast animate-fade-in">
+          <ion-icon name="checkmark-circle-outline"></ion-icon>
+          <span>{{ contactSavedFeedback() }}</span>
+        </div>
+      }
 
       <!-- Linked Recurring Payments for this Person -->
       @if (personRecurringPayments().length > 0) {

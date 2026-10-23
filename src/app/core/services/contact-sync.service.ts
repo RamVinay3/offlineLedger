@@ -24,6 +24,27 @@ export class ContactSyncService {
   }
 
   /**
+   * Determine supported contact properties safely using getProperties()
+   */
+  private async getSupportedProperties(): Promise<string[]> {
+    const defaultProps = ['name', 'tel'];
+    if (
+      typeof navigator !== 'undefined' &&
+      'contacts' in navigator &&
+      typeof (navigator as any).contacts?.getProperties === 'function'
+    ) {
+      try {
+        const supported: string[] = await (navigator as any).contacts.getProperties();
+        const filtered = ['name', 'tel', 'email'].filter((p) => supported.includes(p));
+        return filtered.length > 0 ? filtered : defaultProps;
+      } catch {
+        return defaultProps;
+      }
+    }
+    return defaultProps;
+  }
+
+  /**
    * Open the native contact picker dialog on supported devices (Android Chrome, iOS Safari 14.5+)
    */
   async pickFromNativeContacts(): Promise<DeviceContact[]> {
@@ -32,7 +53,8 @@ export class ContactSyncService {
     }
 
     try {
-      const contacts = await (navigator as any).contacts.select(['name', 'tel', 'email'], {
+      const props = await this.getSupportedProperties();
+      const contacts = await (navigator as any).contacts.select(props, {
         multiple: true,
       });
 
@@ -54,6 +76,143 @@ export class ContactSyncService {
       }
       throw e;
     }
+  }
+
+  /**
+   * Pick a single contact from the device address book (for Add Person modal)
+   */
+  async pickSingleNativeContact(): Promise<DeviceContact | null> {
+    if (!this.isNativeContactPickerSupported()) {
+      throw new Error('Device Contacts Picker is not supported on this browser/device.');
+    }
+
+    try {
+      const props = await this.getSupportedProperties();
+      const contacts = await (navigator as any).contacts.select(props, {
+        multiple: false,
+      });
+
+      if (!contacts || contacts.length === 0) {
+        return null;
+      }
+
+      const c = contacts[0];
+      const name = Array.isArray(c.name) ? c.name[0] : c.name || 'Unnamed Contact';
+      const tel = Array.isArray(c.tel) ? c.tel[0] : c.tel || undefined;
+      const email = Array.isArray(c.email) ? c.email[0] : c.email || undefined;
+
+      return {
+        name: name.trim(),
+        phoneNumber: tel ? tel.trim() : undefined,
+        email: email ? email.trim() : undefined,
+        selected: true,
+      };
+    } catch (e: any) {
+      if (e?.name === 'AbortError') {
+        return null;
+      }
+      throw e;
+    }
+  }
+
+  /**
+   * Generate standard vCard 3.0 string for a contact
+   */
+  generateVCard(person: { name: string; phoneNumber?: string; email?: string; notes?: string }): string {
+    const cleanName = person.name.replace(/\r?\n/g, ' ').trim();
+    const phone = person.phoneNumber ? person.phoneNumber.replace(/[^\d+]/g, '').trim() : '';
+    const email = person.email ? person.email.trim() : '';
+    const notes = person.notes ? person.notes.replace(/\r?\n/g, '\\n').trim() : '';
+
+    let vcard = 'BEGIN:VCARD\r\nVERSION:3.0\r\n';
+    vcard += `FN:${cleanName}\r\n`;
+    vcard += `N:;${cleanName};;;\r\n`;
+    if (phone) {
+      vcard += `TEL;TYPE=CELL,VOICE:${phone}\r\n`;
+    }
+    if (email) {
+      vcard += `EMAIL;TYPE=INTERNET:${email}\r\n`;
+    }
+    if (notes) {
+      vcard += `NOTE:${notes}\r\n`;
+    }
+    vcard += 'END:VCARD\r\n';
+    return vcard;
+  }
+
+  /**
+   * Generate combined vCard 3.0 string for multiple contacts (bulk backup/export)
+   */
+  generateAllVCard(people: Array<{ name: string; phoneNumber?: string; email?: string; notes?: string }>): string {
+    return people.map((p) => this.generateVCard(p)).join('\r\n');
+  }
+
+  /**
+   * Save a person to the phone's native contacts:
+   * Uses Web Share API with a .vcf file if available (direct system prompt),
+   * or triggers a browser download of the .vcf file which opens the phone's Contacts app.
+   */
+  async saveToDeviceContacts(person: {
+    name: string;
+    phoneNumber?: string;
+    email?: string;
+    notes?: string;
+  }): Promise<{ success: boolean; method: 'share' | 'download' }> {
+    const vcardContent = this.generateVCard(person);
+    const blob = new Blob([vcardContent], { type: 'text/vcard;charset=utf-8' });
+    const safeBaseName = person.name.replace(/[^a-zA-Z0-9_\-]/g, '_') || 'contact';
+    const fileName = `${safeBaseName}.vcf`;
+
+    // 1. Try Web Share API with File (Supported on Android Chrome & iOS Safari)
+    if (
+      typeof navigator !== 'undefined' &&
+      typeof (navigator as any).canShare === 'function' &&
+      typeof (navigator as any).share === 'function' &&
+      typeof File !== 'undefined'
+    ) {
+      try {
+        const file = new File([blob], fileName, { type: 'text/vcard' });
+        if ((navigator as any).canShare({ files: [file] })) {
+          await (navigator as any).share({
+            files: [file],
+            title: `Save ${person.name} to Contacts`,
+            text: `Contact card for ${person.name}`,
+          });
+          return { success: true, method: 'share' };
+        }
+      } catch (e: any) {
+        if (e?.name === 'AbortError') {
+          return { success: false, method: 'share' };
+        }
+        // Fallback to download on share error
+      }
+    }
+
+    // 2. Fallback: Trigger browser download of .vcf file
+    // On Android & iOS, opening a .vcf file automatically launches the Contacts app "Save Contact" screen
+    this.triggerVCardDownload(blob, fileName);
+    return { success: true, method: 'download' };
+  }
+
+  /**
+   * Export all people in LOOP as a combined .vcf file for importing into phone contacts
+   */
+  exportAllContactsAsVcf(people: Array<{ name: string; phoneNumber?: string; email?: string; notes?: string }>): void {
+    const vcardContent = this.generateAllVCard(people);
+    const blob = new Blob([vcardContent], { type: 'text/vcard;charset=utf-8' });
+    this.triggerVCardDownload(blob, 'loop_all_contacts.vcf');
+  }
+
+  private triggerVCardDownload(blob: Blob, fileName: string): void {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
   }
 
   /**

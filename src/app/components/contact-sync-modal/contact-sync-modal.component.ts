@@ -17,6 +17,7 @@ import {
   alertCircleOutline,
   searchOutline,
   cloudUploadOutline,
+  cloudDownloadOutline,
 } from 'ionicons/icons';
 
 @Component({
@@ -24,7 +25,7 @@ import {
   standalone: true,
   imports: [CommonModule, FormsModule, IonIcon],
   template: `
-    <div class="modal-backdrop animate-fade-in" (click)="onClose()">
+    <div class="modal-backdrop animate-fade-in" (click)="onBackdropClick($event)">
       <div class="modal-dialog card-container" (click)="$event.stopPropagation()">
         <!-- Header -->
         <div class="modal-header">
@@ -32,7 +33,7 @@ import {
             <ion-icon name="people-outline" class="header-icon"></ion-icon>
             <div>
               <h2>Sync & Import Contacts</h2>
-              <span class="sub-text">Import your phone contacts directly into LOOP</span>
+              <span class="sub-text">Import phone contacts or save LOOP contacts to your device</span>
             </div>
           </div>
           <button class="icon-btn" (click)="onClose()" title="Close">
@@ -41,6 +42,14 @@ import {
         </div>
 
         <div class="modal-body">
+          <!-- Status / Feedback banner (always prominent at top) -->
+          @if (statusMessage()) {
+            <div class="status-msg animate-fade-in" [class.error]="isError()">
+              <ion-icon [name]="isError() ? 'alert-circle-outline' : 'checkmark-circle-outline'"></ion-icon>
+              <span>{{ statusMessage() }}</span>
+            </div>
+          }
+
           <!-- Step 1: Source Selection (if no contacts loaded yet) -->
           @if (parsedContacts().length === 0) {
             <div class="sources-grid">
@@ -90,13 +99,26 @@ import {
                   <span>Import spreadsheet with Name, Phone, and Email</span>
                 </div>
               </label>
+
+              <!-- Option D: Export LOOP Contacts to Phone -->
+              @if (state.people().length > 0) {
+                <button type="button" class="source-card export-card" (click)="exportAllToPhone()">
+                  <div class="source-icon export-icon">
+                    <ion-icon name="cloud-download-outline"></ion-icon>
+                  </div>
+                  <div class="source-info">
+                    <strong>Save All LOOP Contacts to Phone (.vcf)</strong>
+                    <span>Export all {{ state.people().length }} contacts to your phone address book</span>
+                  </div>
+                </button>
+              }
             </div>
 
             <!-- Helpful note -->
             <div class="info-tip">
               <ion-icon name="alert-circle-outline"></ion-icon>
               <span>
-                100% Offline: Your contacts are parsed locally in memory on your device. Zero data is sent to any server.
+                100% Offline: Contacts are processed purely in local device memory. Zero data is sent to any server.
               </span>
             </div>
           } @else {
@@ -156,13 +178,6 @@ import {
               <button type="button" class="text-btn" (click)="resetList()">
                 ← Choose another file or contact source
               </button>
-            </div>
-          }
-
-          <!-- Status / Error message -->
-          @if (statusMessage()) {
-            <div class="status-msg" [class.error]="isError()">
-              {{ statusMessage() }}
             </div>
           }
         </div>
@@ -300,6 +315,10 @@ import {
     .csv-icon {
       background: rgba(245, 158, 11, 0.15);
       color: #f59e0b;
+    }
+    .export-icon {
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
     }
     .source-info {
       display: flex;
@@ -551,6 +570,7 @@ export class ContactSyncModalComponent implements OnInit {
       alertCircleOutline,
       searchOutline,
       cloudUploadOutline,
+      cloudDownloadOutline,
     });
   }
 
@@ -560,12 +580,18 @@ export class ContactSyncModalComponent implements OnInit {
 
   async pickNativeContacts(): Promise<void> {
     try {
-      this.statusMessage.set('');
+      this.statusMessage.set('Opening phone contacts...');
+      this.isError.set(false);
       const picked = await this.contactSync.pickFromNativeContacts();
-      if (picked.length === 0) return;
+      if (picked.length === 0) {
+        this.statusMessage.set('No contacts were selected from your phone book.');
+        return;
+      }
 
       const annotated = this.contactSync.annotateWithExisting(picked, this.state.people());
       this.parsedContacts.set(annotated);
+      this.statusMessage.set(`Loaded ${annotated.length} contact(s) from your phone book.`);
+      this.isError.set(false);
     } catch (e: any) {
       this.isError.set(true);
       this.statusMessage.set(e.message || 'Failed to access device contacts.');
@@ -643,6 +669,25 @@ export class ContactSyncModalComponent implements OnInit {
       this.statusMessage.set(e.message || 'Error importing contacts.');
     } finally {
       this.isImporting.set(false);
+    }
+  }
+
+  exportAllToPhone(): void {
+    try {
+      this.contactSync.exportAllContactsAsVcf(this.state.people());
+      this.statusMessage.set(
+        `Exported ${this.state.people().length} contacts as .vcf file! Open the downloaded file to add them directly to your phone contacts.`
+      );
+      this.isError.set(false);
+    } catch {
+      this.isError.set(true);
+      this.statusMessage.set('Failed to export contacts to .vcf file.');
+    }
+  }
+
+  onBackdropClick(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.onClose();
     }
   }
 
